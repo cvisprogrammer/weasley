@@ -12,7 +12,7 @@ try {
  const page=await ctx.newPage();await page.goto('http://127.0.0.1:4173/test.html');
  results.gpu=await page.evaluate(async()=>{try{return {available:!!(await navigator.gpu?.requestAdapter())};}catch(e){return {available:false,reason:String(e)};}});
  await page.evaluate(()=>{window.events=[];window.requests=[];window.reply=' world';window.wait=10;
- window.chrome={storage:{local:{get:async()=>({settings:{enabled:true,sites:[location.origin],delay:100,tokens:10,model:'test'}})},onChanged:{addListener:()=>{}}},runtime:{sendMessage:async m=>{window.events.push(m);if(m.kind==='predict'){window.requests.push(m);const text=window.reply;await new Promise(r=>setTimeout(r,window.wait));return {text,ttft:8,total:10};}return {};}}};});
+ window.contextListener=null;window.chrome={storage:{local:{get:async()=>({settings:{enabled:true,sites:[location.origin],delay:100,tokens:10,model:'test'}})},onChanged:{addListener:()=>{}}},runtime:{id:'test-extension',getURL:path=>'chrome-extension://test-extension/'+path,onMessage:{addListener:fn=>window.contextListener=fn},sendMessage:async m=>{window.events.push(m);if(m.kind==='predict'){window.requests.push(m);const text=window.reply;await new Promise(r=>setTimeout(r,window.wait));return {text,ttft:8,total:10};}return {};}}};});
  await page.addScriptTag({path:'dist/content.js'});
  const input=page.locator('#ordinary');await input.focus();await input.pressSequentially('Hello');await page.waitForTimeout(180);
  assert.equal(await input.inputValue(),'Hello');assert.ok(await page.evaluate(()=>events.some(x=>x.event==='shown')));
@@ -27,6 +27,14 @@ try {
  await input.fill('Partial');await input.focus();await input.press('End');await input.pressSequentially(' test');await page.waitForTimeout(180);await input.press('Alt+ArrowRight');assert.equal(await input.inputValue(),'Partial test useful ');results.partialAcceptance=true;
  for(const selector of ['input[type=email]','input[autocomplete="cc-number"]','[contenteditable=true]']){const n=await page.evaluate(()=>requests.length);await page.locator(selector).fill('excluded');await page.waitForTimeout(180);assert.equal(await page.evaluate(()=>requests.length),n);}results.otherSensitiveFieldsExcluded=true;
  const textarea=page.locator('#typing');await textarea.fill('Textarea');await textarea.focus();await textarea.press('End');await textarea.pressSequentially(' test');await page.waitForTimeout(180);await textarea.press('Tab');assert.equal(await textarea.inputValue(),'Textarea test useful words');await textarea.focus();await textarea.press('Control+z');assert.equal(await textarea.inputValue(),'Textarea test');results.textareaAcceptanceAndUndo=true;
+
+ const contextResult=await page.evaluate(()=>{
+ const fixture=document.createElement('section');fixture.innerHTML='<p id="thread">The meeting is on Friday at noon.</p><nav>irrelevant menu</nav><p data-private>private account data</p><div contenteditable="true">private draft</div><p hidden>hidden data</p>';document.body.append(fixture);
+ const selection=getSelection(),range=document.createRange();range.selectNodeContents(fixture);selection.removeAllRanges();selection.addRange(range);
+ let result;contextListener({kind:'captureContext'},{id:'test-extension',url:'chrome-extension://test-extension/popup.html'},r=>result=r);return result;
+ });assert.equal(contextResult.context,'The meeting is on Friday at noon.');
+ await input.fill('Contextual');await input.focus();await input.press('End');await input.pressSequentially(' draft');await page.waitForTimeout(180);assert.equal(await page.evaluate(()=>requests.at(-1).context),'The meeting is on Friday at noon.');
+ await page.evaluate(()=>contextListener({kind:'clearContext'},{id:'test-extension',url:'chrome-extension://test-extension/popup.html'},()=>{}));await input.pressSequentially(' again');await page.waitForTimeout(180);assert.equal(await page.evaluate(()=>requests.at(-1).context),'');results.selectedContextFilteredAndCleared=true;
  const bench=await ctx.newPage();await bench.goto('http://127.0.0.1:4173/benchmark.html');await bench.locator('#run').click();await bench.waitForFunction(()=>!document.querySelector('#export').disabled);results.modelBenchmark=JSON.parse(await bench.locator('#result').textContent());
  results.note='Editing checks use mocked inference; no model throughput or quality claim.';
  console.log(JSON.stringify(results,null,2));

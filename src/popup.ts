@@ -3,7 +3,7 @@ const $=(id:string)=>document.getElementById(id)!;
 const input=(id:string)=>$(id) as HTMLInputElement;
 const s=await settings();const save=()=>chrome.storage.local.set({settings:s});
 input('enabled').checked=s.enabled;
-for(const k of ['model','delay','tokens'] as const)input(k).value=String(s[k]);
+for(const k of ['model','delay','tokens','maxWords','promptMode'] as const)input(k).value=String(s[k]);
 input('enabled').onchange=()=>{s.enabled=input('enabled').checked;void save();};
 input('model').onchange=()=>{s.model=input('model').value;void save();};
 for(const k of ['delay','tokens'] as const)input(k).onchange=()=>{s[k]=Math.max(k==='delay'?100:5,Math.min(k==='delay'?2000:15,Number(input(k).value)||250));void save();};
@@ -16,3 +16,10 @@ $('load').onclick=async()=>{const b=$('load') as HTMLButtonElement;b.disabled=tr
 async function refresh(){try{const state=await send('status');$('status').textContent=state.text||state.error;const metrics=((await chrome.storage.local.get('metrics')).metrics || []) as any[];const shown=metrics.filter((x:any)=>x.kind==='shown'),accepted=metrics.filter((x:any)=>x.kind==='accepted'),rejected=metrics.filter((x:any)=>x.kind==='rejected');const avg=(k:string)=>shown.length?Math.round(shown.reduce((a:number,x:any)=>a+x[k],0)/shown.length):0;
 $('stats').textContent=`Last 500 events\nShown: ${shown.length} · Accepted: ${accepted.length}\nAcceptance: ${shown.length?(100*accepted.length/shown.length).toFixed(1):0}%\nRejected: ${rejected.length}\nMean TTFT: ${avg('ttft')} ms\nMean completion: ${avg('total')} ms\nMean length: ${avg('chars')} chars\nAccepted characters: ${accepted.reduce((a:number,x:any)=>a+x.chars,0)}\nEstimated net keys saved: ${accepted.reduce((a:number,x:any)=>a+Math.max(0,x.chars-(x.keys||1)),0)}`;}catch(e){$('status').textContent=String(e);}}
 $('reset').onclick=async()=>{await chrome.storage.local.remove('metrics');await refresh();};void refresh();setInterval(()=>void refresh(),1500);
+
+input('promptMode').onchange=()=>{s.promptMode=input('promptMode').value as 'instructed'|'raw';void save();};
+input('maxWords').onchange=()=>{s.maxWords=Number(input('maxWords').value);void save();};
+async function pageContext(kind:string){try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(!tab?.id)throw Error('No active page');const r=await chrome.tabs.sendMessage(tab.id,{kind});$('contextPreview').textContent=r.error|| (r.context?`${r.characters}/1200 characters\n${r.context}`:'Draft only — select a non-editable passage on the page first.');}catch{$('contextPreview').textContent='Open an allowed page and reload it before capturing context.';}}
+$('captureContext').onclick=()=>void pageContext('captureContext');
+$('clearContext').onclick=()=>void pageContext('clearContext');
+void pageContext('contextStatus');

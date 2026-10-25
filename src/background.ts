@@ -32,7 +32,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply) => {
     const event={at:Date.now(),kind:['shown','accepted','rejected'].includes(m.event)?m.event:'shown', keys:Math.max(1,Math.min(2,Number(m.keys)||1)), chars:Math.max(0,Number(m.chars)||0),ttft:Math.max(0,Number(m.ttft)||0),total:Math.max(0,Number(m.total)||0)};
     await chrome.storage.local.set({metrics:[...metrics.slice(-499),event]}); }); await metricQueue; reply({}); return;
    }
-   if(m.kind==='predict' && (typeof m.prefix!=='string' || m.prefix.length>1800)) {reply({text:''});return;}
+   if(m.kind==='predict' && (typeof m.prefix!=='string' || m.prefix.length>1800 || typeof m.context!=='string' || m.context.length>1200)) {reply({text:''});return;}
    if(m.kind==='resetEngine') { if(await chrome.offscreen.hasDocument()) await chrome.offscreen.closeDocument(); reply({ok:true}); return; }
    await ensure(); reply(await chrome.runtime.sendMessage({...m,settings:s,owner:sender.tab?.id ?? 'popup',target:'engine'}));
   } catch(e) {reply({error:String(e),text:''});}

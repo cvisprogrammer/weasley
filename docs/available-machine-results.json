@@ -12,11 +12,12 @@
   "partialAcceptance": true,
   "otherSensitiveFieldsExcluded": true,
   "textareaAcceptanceAndUndo": true,
+  "selectedContextFilteredAndCleared": true,
   "modelBenchmark": {
-    "at": "2026-10-25T07:50:42.894Z",
+    "at": "2026-10-25T18:25:19.868Z",
     "model": "Qwen3.5-2B-q4f16_1-MLC",
     "error": "Error: No WebGPU adapter. Inference benchmark cannot run.",
-    "elapsedMs": 12
+    "elapsedMs": 6
   },
   "note": "Editing checks use mocked inference; no model throughput or quality claim."
 }

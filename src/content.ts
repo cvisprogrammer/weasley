@@ -1,4 +1,6 @@
+import { selectedContext } from './context';
 import { allowed, nextWord, safeField, settings, type Settings } from './shared';
+let context='',contextUrl=location.href;
 let config:Settings, composing=false, epoch=0, suggestion='', snapshot='', cursor=0, pending=false;
 let field:HTMLInputElement|HTMLTextAreaElement|null=null, timer:ReturnType<typeof setTimeout>;
 const host=document.createElement('div');host.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:2147483647';
@@ -17,10 +19,11 @@ function paint(){
  ghost.style.cssText=`position:fixed;left:${x}px;top:${y}px;font:${s.font};letter-spacing:${s.letterSpacing};color:${s.color};opacity:.45;white-space:pre;max-width:${r.right-x-8}px;overflow:hidden;`;ghost.textContent=suggestion;
 }
 async function schedule(){
+ if(contextUrl!==location.href){context='';contextUrl=location.href;}
  clear();if(!config||!allowed(location.href,config)||composing||!safeField(document.activeElement))return;
  field=document.activeElement;if(field.selectionStart!==field.selectionEnd||field.selectionStart!==field.value.length||field.value.length<3)return;
  snapshot=field.value;cursor=field.selectionStart!;const ticket=epoch,target=field;
- timer=setTimeout(async()=>{pending=true;const r=await send('predict',{prefix:snapshot.slice(-1800)});
+ timer=setTimeout(async()=>{pending=true;const r=await send('predict',{prefix:snapshot.slice(-1800),context});
  if(ticket===epoch)pending=false;
  if(ticket!==epoch||composing||document.activeElement!==target||target.value!==snapshot||target.selectionStart!==cursor||!config.enabled)return;
  if(r.text){suggestion=r.text;paint();metric('shown',{chars:suggestion.length,ttft:r.ttft,total:r.total});}},config.delay);
@@ -40,4 +43,13 @@ document.addEventListener('keydown',e=>{
  if(!['Shift','Control','Alt','Meta'].includes(e.key))clear();
 },true);
 void settings().then(s=>config=s);
-chrome.storage.onChanged.addListener((c,a)=>{if(a==='local'&&c.settings){config=c.settings.newValue as Settings;clear();}});
+chrome.storage.onChanged.addListener((c,a)=>{if(a==='local'&&c.settings){config=c.settings.newValue as Settings;if(!allowed(location.href,config))context='';clear();}});
+
+chrome.runtime.onMessage.addListener((m,sender,reply)=>{
+ if(sender.id!==chrome.runtime.id || sender.tab || sender.url!==chrome.runtime.getURL('popup.html') || !['captureContext','contextStatus','clearContext'].includes(m.kind))return;
+ if(!config || !allowed(location.href,config)){context='';reply({error:'Enable and allow this website first.'});return;}
+ if(contextUrl!==location.href){context='';contextUrl=location.href;}
+ if(m.kind==='captureContext'){clear();context=selectedContext();}
+ if(m.kind==='clearContext'){clear();context='';}
+ reply({context,characters:context.length});
+});

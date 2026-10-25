@@ -1,6 +1,6 @@
 # Weasley privacy disclosure (draft for distribution review)
 
-Weasley processes the preceding text of supported fields only on websites explicitly allowed by the user. Inference runs in a local WebGPU worker. Text is not uploaded, logged, or retained by Weasley. Model data downloads from Hugging Face after explicit approval. Those requests disclose ordinary connection metadata to the download provider, such as IP address, but contain no typed content.
+Weasley processes the preceding text of supported fields only on websites explicitly allowed by the user. The user can explicitly select a non-editable passage as background context, preview the filtered passage, and clear it. No entire-page scraping runs automatically. Selected context is scoped to the page in memory, capped at 1,200 characters, and is not saved to disk. Inference runs in a local WebGPU worker. Text is not uploaded, logged, or retained by Weasley. Model data downloads from Hugging Face after explicit approval. Those requests disclose ordinary connection metadata to the download provider, such as IP address, but contain no typed content.
 
 The extension stores settings, allowed origins, model cache, and up to 500 numeric performance events locally. The optional typing lab stores numeric trial results in that page's local storage. There are no accounts, analytics, telemetry uploads, advertising, or cloud inference services.
 
