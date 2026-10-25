@@ -1,5 +1,6 @@
 import { WebWorkerMLCEngine, prebuiltAppConfig } from '@mlc-ai/web-llm';
 import { continuationMessages, shortContinuation, phraseComplete } from './prediction';
+import {mailMessages,replySchema,validateDecision,deterministicDecision,validPacket} from './mail/classify';
 import { type Settings } from './shared';
 const worker = new Worker('worker.js', { type: 'module' });
 let state = { text: 'Not loaded. Open settings to approve the model download.', ready: false, model: '', busy: false };
@@ -18,6 +19,23 @@ chrome.runtime.onMessage.addListener((m, sender, reply) => {
   state.busy = true; state.ready = false; state.text = 'Loading…';
   void (async () => { try { const s = m.settings as Settings; await engine.reload(s.model); state.model = s.model; state.ready = true; state.text = 'Ready — inference stays on this device'; reply({ok:true}); }
   catch(e) { state.text = String(e); reply({error:state.text}); } finally {state.busy=false;} })(); return true;
+ }
+ if(m.kind==='classifyMail'){
+  if(!validPacket(m.packet)){reply({error:'Invalid email analysis request.'});return;}
+  const rule=deterministicDecision(m.packet);if(rule){reply({decision:rule});return;}
+  if(!state.ready){reply({error:'Load the local model before scanning mail.'});return;}
+  if(state.busy){reply({busy:true});return;}
+  if(state.model!==m.settings.model){reply({error:'The selected model is not loaded. Click Load model.'});return;}
+  state.busy=true;owner=m.owner;const ticket=++epoch;
+  void(async()=>{try{
+   await engine.resetChat();
+   if(ticket!==epoch){reply({error:'Analysis cancelled.'});return;}
+   const result=await engine.chat.completions.create({messages:mailMessages(m.packet),stream:false,max_tokens:180,temperature:0,response_format:{type:'json_object',schema:replySchema},extra_body:{enable_thinking:false}});
+   if(ticket!==epoch){reply({error:'Analysis cancelled.'});return;}
+   const raw=result.choices[0]?.message.content||'';
+   reply({decision:result.choices[0]?.finish_reason==='length'?{verdict:'uncertain',evidence:'',reason:'Model output reached its generation limit.'}:validateDecision(raw,m.packet)});
+  }catch{state.ready=false;state.text='Local mail analysis failed. Reset the engine and load the model again.';reply({error:state.text});}
+  finally{try{await engine.resetChat();}catch{}state.busy=false;}})();return true;
  }
  if (m.kind === 'predict') {
   if(!state.ready){reply({text:'',reason:state.text});return;}

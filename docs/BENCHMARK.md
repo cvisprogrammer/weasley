@@ -5,7 +5,7 @@ Run date: October 25, 2026. Linux x86_64 cloud instance, Node 24.19.0, Chromium 
 | Check | Observed result |
 | --- | --- |
 | TypeScript strict type check | Passed |
-| Unit tests | Nine passed: consent/filtering/word-boundary utilities plus offscreen lifecycle and internal-page authorization tests using mocked inference/Chrome APIs |
+| Unit tests | 18 passed as of v0.4: typing utilities, local engine lifecycle, mail parsing/evidence, OAuth/API handling, and private mail/badge authorization using explicit fixtures |
 | Build | Passed, all entry points bundled |
 | Model library compatibility | All three requested Qwen3.5 sizes exist in installed WebLLM 0.2.86 registry |
 | WASM integrity | Three modules pass native WebAssembly validation; SHA-256 digests pinned in scripts/model-lock.json |
@@ -32,3 +32,13 @@ The optional separate benchmark is still served with `npm run serve` at `/benchm
 The old transcription/trial controls were removed from the primary page as requested. Numeric popup counters remain diagnostic estimates; no human words-per-minute or net typing-time benefit has been established. Future controlled studies should compare total elapsed time and correctness, including the cost of reading rejected suggestions.
 
 Version 0.3 specifically addresses silent failure handling and simplifies interaction. It does not establish that the exact Mac failure was reproduced or that real model quality improved. Full extension/GPU testing remains blocked in this cloud environment. Rich text, distinct alternatives, calibrated confidence gating, optimization and personalization remain future work.
+
+## Version 0.4 mail assistant validation
+
+The reply assistant adds dedicated MIME/evidence/API/gateway tests and a browser fixture workflow. The browser suite tests the real dashboard code against explicitly mocked Chrome Identity, Gmail HTTP responses and model verdicts. It also exercises the real badge adapter on a Gmail-like table. It confirms configuration-manifest generation, no body requests before Scan, thread parsing, suppression of already-sent replies, token isolation from model requests, hashed-only persistent dismissals, stop preventing later reads, disconnect/revocation cleanup, labeled samples, unchanged Google importance cells, account mismatch rejection, changed-row invalidation and no tracking-resource loads.
+
+The inert parser tests cover quoted text, inline hidden HTML, UTF-8/declared charset, and malformed/truncated data; none renders an email DOM. The API tests assert Gmail calls are GET-only and refresh one expired token. The gateway tests ensure content scripts cannot invoke private mail analysis or retrieve another account's badge quotes. JSON/evidence tests validate fabricated/irrelevant quotes are not accepted as Reply flags.
+
+[Mail browser fixture results](mail-browser-results.json) are application checks, not model accuracy or a live OAuth success claim. No actual mailbox was connected or read. The OAuth client is not configured in the distributed ZIP. Real Google sign-in, current Gmail DOM compatibility, model classification precision/recall, and target-Mac latency remain unverified. The cloud still has no WebGPU adapter and its administrator policy blocks loading unpacked extensions. Before relying on flags, manually label representative school/list/personal threads and compare false positives/negatives; there is no calibrated confidence threshold yet.
+
+Final v0.4 checks: strict type check and production build passed; 18 unit/integration tests passed; 13 mail browser workflow checks passed against fixtures. The existing typing browser checks also passed, with the known extension-policy/WebGPU limitations reported separately.

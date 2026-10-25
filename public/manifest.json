@@ -1,13 +1,32 @@
 {
   "manifest_version": 3,
-  "name": "Weasley — Local predictive typing",
-  "version": "0.3.0",
+  "name": "Weasley \u2014 Local reply inbox",
+  "version": "0.4.0",
   "minimum_chrome_version": "120",
-  "description": "Private, on-device text continuations on websites you explicitly allow.",
-  "permissions": ["storage", "offscreen", "scripting"],
-  "host_permissions": ["https://huggingface.co/*", "https://*.huggingface.co/*", "https://*.hf.co/*"],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
-  "background": {"service_worker":"background.js", "type":"module"},
-  "action": {"default_popup":"popup.html"},
-  "content_security_policy": {"extension_pages":"script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co; worker-src 'self'"}
+  "description": "Find email requests that need your reply using a local model. Read-only Gmail access; no cloud inference.",
+  "permissions": [
+    "storage",
+    "offscreen",
+    "scripting",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://huggingface.co/*",
+    "https://*.huggingface.co/*",
+    "https://*.hf.co/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://gmail.googleapis.com https://oauth2.googleapis.com; worker-src 'self'"
+  }
 }

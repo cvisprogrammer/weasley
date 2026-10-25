@@ -1,45 +1,44 @@
-# Weasley
+# Weasley — Needs your reply
 
-Private, on-device predictive typing for Chrome. Manifest V3, TypeScript, WebLLM 0.2.86 and WebGPU. No account, API key, inference server or telemetry. Default model: Qwen3.5-2B; default suggestion: at most three words after a 250 ms pause.
+A local-model Gmail assistant that flags unresolved email requests with supporting quotes. It keeps Google's **Important** marker intact and adds a separate **↩ Reply** indicator beside supported Gmail inbox subjects. No developer backend, cloud inference, email sending, or Gmail label changes.
 
-## Try it
+## Try v0.4
 
-1. Unzip `artifacts/weasley-0.3.0.zip`. In `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the folder containing `manifest.json`.
-2. Open Weasley, select a model, and click **Download / load model**. Approve the initial download by clicking this button; weights/tokenizers are then cached locally. Wait for Ready.
-3. Click **Try it**. The bundled page has a short preamble, one textarea and a status line. No server, text selection, trial buttons or assisted/unassisted controls are needed.
-4. Type `The design review is scheduled for ` and pause. The model receives the relevant preamble automatically. **Tab** accepts; **Alt+Right** accepts a word; **Escape** dismisses. Native editing preserves undo/redo.
+1. Download/unzip `artifacts/weasley-0.4.0.zip`. Replace the contents of your **existing** extension folder and click Reload in `chrome://extensions`; keeping the same path preserves extension identity and model cache. For a new installation, enable Developer mode → Load unpacked → select the folder containing `manifest.json`.
+2. Open Weasley → **Open Needs your reply**. Choose **Balanced 2B** and load the model. The first load downloads model data from Hugging Face; subsequent loads use the local cache.
+3. Click **Try sample inbox** to classify fictional mail without connecting Google. Samples use your real local model; they are not claimed to be real Gmail messages or prevalidated model results.
+4. To connect real Gmail, follow the built-in one-time Google setup helper or [Google setup guide](docs/GOOGLE_SETUP.md). It displays the extension ID and generates a configured manifest from a public Chrome Extension OAuth client ID. No client secret is used. The distributable intentionally has no OAuth client configured.
+5. Connect Gmail, check the displayed account, then click **Scan Primary inbox**. Each scan checks up to 20 Primary inbox threads. Review Reply flags and their exact supporting quotes, dismiss mistakes with **Not needed**, or open the original thread in Gmail.
 
-When upgrading, **replace the contents of your existing extension folder**, then click Reload in `chrome://extensions`. Keeping the same folder preserves extension identity and its cached data. Load the model again after extension reload; it should use the cache. Existing model preferences are retained. Legacy raw-mode/token-budget preferences are no longer used by the extension's default path.
+Badges appear only for scanned, API-matched threads on the same Gmail account, and only in supported DOM layouts. They expire after 15 minutes or observed row changes. No badge does not mean no response is needed. A local dashboard remains available even when the Gmail UI adapter cannot identify a row/account.
 
-For other websites, add their origin in the popup, grant the permission, then reload the page. Ordinary text inputs and textareas only; ChatGPT's contenteditable editor is not supported. Chrome grants host-level permissions across ports, while Weasley separately enforces exact allowed origins. The extension's own bundled test page is trusted directly; it cannot grant permission to any other webpage.
+## How it decides
 
-## Automatic context
+The Gmail API reads full thread MIME data with `gmail.readonly`. A pure HTML parser extracts text without rendering email HTML or loading tracking images, scripts, links or attachments. It prefers plain-text alternatives, handles declared text charset, removes common quoted blocks and bounds the latest message to 2,400 characters plus three short history messages. Truncated/missing latest text is sent to Review, not silently marked clear. Older history can be shortened and is labeled accordingly.
 
-After a typing pause, Weasley scans rendered text on the current **allowed** page. It starts with nearby preceding elements and the field's containing section, then samples the main/article area and body within bounded work (up to 1,000 text nodes and a nominal 10 ms scan budget). It scores passages by meaningful-word overlap with the draft and structural proximity, deduplicates them, and sends at most 1,200 characters with the last 1,800 characters of the current field. A short per-field cache avoids rescanning on every keystroke.
+Ordinary code checks message order and known sender identities. If you sent the latest non-draft message, it suppresses a stale reply flag. Optional sender aliases are used only for the current scan. The model receives account addresses and bounded thread text as untrusted data and returns constrained JSON: verdict, intended recipient and exact evidence. No model tools or email actions are available. A Reply flag requires an exact quote in the latest fresh body and a target of you or everyone. Fabricated quotes, other recipients, incomplete output and unsubscribe-only evidence are rejected or sent to Review. A matching quote is necessary, not proof that a classification is correct.
 
-Input values, other drafts/editable regions, labels/controls, navigation, menus, hidden or transparent text, `data-private` sections and extension UI are excluded. This is deterministic relevance filtering, not an additional semantic model. It may miss a distant useful passage or include an unrelated visible passage. The nominal scan budget is checked between nodes and is not a hard real-time guarantee. See Advanced settings for the actual context excerpt used. No other page or tab is fetched, and context is not saved to disk or uploaded.
+This is request detection, **not sender trust/phishing detection**. Newsletters, portal tasks and rhetorical questions are instructed to receive no reply flag, but actual precision/recall has not been measured. There are no calibrated confidence scores or claims that model probabilities predict acceptance.
 
-The worker labels the context and draft as untrusted data. Prompt instructions reduce instruction confusion but do not guarantee resistance to malicious page text. Only enable websites whose visible content you want processed locally. Sensitive-field detection is conservative and cannot semantically classify arbitrary free text.
+## Privacy and permissions
 
-## Prediction and diagnostics
+Mail travels from Google to your browser and is processed by a shared local WebLLM worker in an offscreen extension document. OAuth tokens never go to the model. Tokens remain in Chrome Identity's cache and the API client's memory, not our extension storage or URLs. Gmail calls are GET-only; Disconnect separately POSTs the token to Google's official revocation endpoint. The worker resets conversation state around mail analyses.
 
-Instructed continuation uses non-thinking mode, low temperature, and a 64-token internal safety budget. It stops early once enough word boundaries are available; the displayed suggestion remains capped to three words by default. A larger internal budget avoids exhausting a tiny token allowance before a useful response appears. Conversational replies, markup, repetition and truncated final words are filtered; a useful first line can be retained without a later explanation. None of this is calibrated confidence estimation.
+Bodies and raw MIME are not saved. Dashboard results live in page memory. Badge quotes/IDs and the connected account live in trusted extension **session memory**, not persistent storage; they can survive service-worker suspension and are cleared on disconnect/browser-session end. Dismissal fingerprints (account/thread/latest-message hashes, without subjects or bodies) and a badge-enabled preference are saved locally. Hashes are metadata, not a guarantee of anonymity. There is no telemetry or developer service. See [privacy disclosure](docs/PRIVACY.md).
 
-The test page reports waiting, predicting, filtered/empty output, a model-selection mismatch, unloaded model, connection failure or timeout. A busy model is retried for a bounded interval if the draft is still current. Obsolete predictions are invalidated and interrupted; cancellation is scoped to the requesting tab/document. Advanced settings retain word length, delay, GPU reset, context preview and numeric diagnostics.
+Gmail website permission is needed for the DOM badge; Chrome can describe that as read/change website data. The actual Gmail OAuth grant is read-only, and the badge code changes only its own visual elements. The model/worker has no Gmail OAuth token or email-write tools. **Disconnect & clear** clears local results, badge data, dismissals and Chrome's token cache; stops the observer; releases the model; and attempts Google revocation. The UI distinguishes failed/unconfirmed revocation.
 
-If no suggestion appears, **read the status line beneath the textarea**. If it says the model is not loaded or the selected model differs, load it from the popup. After a device/worker failure, use Advanced → Release GPU / reset engine, then Load. If it says output was filtered, report that message: model quality still needs target-hardware testing.
+## Implementation
 
-## Architecture and privacy
+Manifest V3, TypeScript, WebLLM 0.2.86, WebGPU, and a small inert MIME/HTML text parser. A single local model is shared with the earlier typing prototype; busy requests wait or are cancelled rather than initializing another model. Selected Qwen3.5 0.8B/2B/4B compiled libraries ship in the ZIP with tracked SHA-256 checks; model data is downloaded only after Load. Scripts/WASM execute locally under extension CSP. Only model-data and the required Google API/revocation hosts are permitted for extension fetches.
 
-The service worker validates sender identity and website consent and creates one offscreen document with Chrome's WORKERS reason. That document uses only Chrome's supported runtime API and owns one dedicated inference worker shared across fields/tabs. Inference does not run on the page thread. Each request resets conversation state so context does not carry across fields/tabs. Browser/extension restart or process reclamation can require model reload; service-worker suspension alone need not recreate the offscreen model.
+The Gmail adapter reads explicit visible account controls and legacy thread IDs (or supported decimal IDs); it never assumes `/u/0` matches the connected account. It inserts a fixed-width Reply badge in the existing subject cell, leaving Google's importance marker and table structure intact. It is a visual overlay, not a native Gmail column or server label. Unknown layouts/accounts receive no annotations. The adapter stops on disconnect and invalidates observed changing rows.
 
-Model data downloads from Hugging Face only after the load action. Executable WASM libraries ship in the ZIP, are validated/checksum-pinned at build time, and are never fetched as remote extension code. CSP restricts scripts/workers to local files and model-data connections to Hugging Face hosts. There is no cloud inference or telemetry. Settings, allowed origins, cached model data and up to 500 numeric performance events are stored locally. Typed text and harvested context are not included in stored diagnostics or HTTP requests. See [privacy disclosure](docs/PRIVACY.md).
+The previous typing experiment is retained under the popup's collapsed **Typing prototype / advanced** section; its built-in Try it page still needs no server. It supports ordinary text inputs/textareas, not contenteditable/Gmail composing. Mail scanning and typing share GPU resources, so pause other local inference for best scan latency.
 
-There is no iframe, shadow-root editor, contenteditable, selected-text or mid-field support. Ghost placement assumes ordinary left-to-right horizontal fields and may misalign under unusual transforms/writing modes. Ghost text is aria-hidden and captures no pointer input. Host websites retain their normal access to their own fields.
+## Build and verify
 
-## Development and verification
-
-Requires Node.js 22+, npm, curl and zip. Use the existing checkout; no Git worktree is needed.
+Use the existing checkout (no worktree needed). Requires Node 22+, npm, curl and zip.
 
 ```sh
 npm ci
@@ -47,14 +46,11 @@ npm run typecheck
 npm test
 npm run build
 npm run package
+# Optional browser tests: leave npm run serve running in another terminal.
+npm run test:browser
+npm run test:mail-browser
 ```
 
-The ZIP has `manifest.json` at its root. It is a prototype distribution candidate, not a Chrome Web Store submission/approval.
+On a Mac set `CHROME_PATH` for automated browser scripts. The tests use explicit identity/Gmail/model fixtures and a Gmail-like DOM; they validate application behavior, read-only requests, evidence checks, privacy boundaries and cleanup, **not live Gmail authorization or real-model accuracy**. Cloud Chromium blocks unpacked extensions and has no WebGPU adapter. Real Google OAuth, live Gmail layout compatibility and Mac model quality remain user-side validation steps. See [test evidence](docs/BENCHMARK.md) and [model report](docs/MODELS.md).
 
-For automated browser checks or the separate optional benchmark, run `npm run serve`, then `npm run test:browser` in another terminal. On macOS set `CHROME_PATH` to the Chrome executable. The server is a test-file server, never an inference server; it is unnecessary for the popup's built-in Try it page.
-
-`http://localhost:4173/benchmark.html` is a separate research tool with fixed prompts and fixed relevant context. It exports load time and six TTFT/completion samples with p50/p95; raw completion remains available there as a comparison. It does not claim human typing-speed improvements. Numeric acceptance/key-saving diagnostics are estimates and do not establish time saved; reading suggestions can cost more time than accepting them saves.
-
-The cloud machine blocks unpacked extensions by administrator policy and has no WebGPU adapter. Unit tests simulate the inference backend to exercise real routing/lifecycle behavior; browser editing/context tests mock inference. Real model quality, full extension startup, M4 latency and net typing-speed benefit remain unverified here. See [validation evidence](docs/BENCHMARK.md) and [model compatibility](docs/MODELS.md).
-
-Next experiments: target-machine debugging/quality measurement, editor-specific email-thread extraction, contenteditable support, calibrated suppression and comparative model benchmarks. Before store submission, complete target-Mac validation, icons/screenshots, permission/privacy disclosures and model/library license review.
+Google restricted-scope verification/public-distribution requirements remain unresolved. No app/store publication or external email action has been performed. The current code and ZIP are a personal prototype for testing.

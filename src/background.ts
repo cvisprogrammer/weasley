@@ -1,3 +1,4 @@
+import {installMailRoutes} from './mail/background';
 import { allowed, settings, matchPattern } from './shared';
 let creating: Promise<void> | undefined;
 let metricQueue: Promise<unknown> = Promise.resolve();
@@ -10,10 +11,12 @@ async function register() {
  await chrome.scripting.unregisterContentScripts();
  const s = await settings(); const matches: string[] = [];
  for (const origin of s.sites) if(await chrome.permissions.contains({origins:[matchPattern(origin)]})) matches.push(matchPattern(origin));
+ if((await chrome.storage.local.get('mailBadgesEnabled')).mailBadgesEnabled===true&&await chrome.permissions.contains({origins:['https://mail.google.com/*']}))await chrome.scripting.registerContentScripts([{id:'gmailReplyBadge',matches:['https://mail.google.com/*'],js:['gmail-badges.js'],runAt:'document_idle',persistAcrossSessions:true}]);
  if(matches.length) await chrome.scripting.registerContentScripts([{id:'typing', matches:[...new Set(matches)], js:['content.js'], runAt:'document_idle', persistAcrossSessions:true}]);
 }
 let registration=Promise.resolve();
-function queueRegister(){registration=registration.catch(()=>{}).then(register);}
+function queueRegister(){registration=registration.catch(()=>{}).then(register);return registration;}
+installMailRoutes({ensure,register:queueRegister});
 chrome.runtime.onInstalled.addListener(queueRegister);
 chrome.runtime.onStartup.addListener(queueRegister);
 chrome.storage.onChanged.addListener((c,area) => { if(area==='local' && c.settings && JSON.stringify((c.settings.oldValue as any)?.sites)!==JSON.stringify((c.settings.newValue as any)?.sites)) queueRegister(); });

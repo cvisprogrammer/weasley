@@ -21,3 +21,5 @@ $('try').onclick=()=>void chrome.tabs.create({url:chrome.runtime.getURL('test.ht
 input('maxWords').onchange=()=>{s.maxWords=Number(input('maxWords').value);void save();};
 async function pageContext(kind:string){try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(!tab?.id)throw Error('No active page');let r;try{r=await chrome.tabs.sendMessage(tab.id,{kind});}catch{r=await chrome.runtime.sendMessage({target:'lab',kind,labTabId:tab.id});}$('contextPreview').textContent=r.context?`${r.characters}/1200 characters\n${r.context}`:'No relevant context collected yet.';$('pageStatus').textContent=r.error||r.status||'';}catch{$('pageStatus').textContent='Click Try it for the built-in test, or reload an allowed website.';}}
 void pageContext('contextStatus');
+
+$('mail').onclick=()=>void chrome.tabs.create({url:chrome.runtime.getURL('mail.html')});

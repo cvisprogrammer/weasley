@@ -1,0 +1,16 @@
+{
+  "oauthSetupHelper": true,
+  "explicitScanBeforeBodies": true,
+  "sampledThreadAnalysis": true,
+  "noTokenSentToModel": true,
+  "dismissalStoresOnlyFingerprint": true,
+  "stopPreventsFurtherReads": true,
+  "disconnectClearsResultsAndRevokes": true,
+  "sampleModeClearlyLabeled": true,
+  "replyBadgeLeavesImportanceUntouched": true,
+  "otherAccountNeverAnnotated": true,
+  "changedThreadInvalidatesBadge": true,
+  "disconnectStopsGmailObserver": true,
+  "noTrackingResourcesLoaded": true,
+  "note": "Google OAuth, Gmail responses and model decisions are explicit test fixtures. This validates the application workflow and Gmail-like DOM integration, not live authorization or model accuracy."
+}

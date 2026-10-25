@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Weasley</title><link rel="stylesheet" href="style.css"><body>
-<h1>Weasley <small>Local predictive typing</small></h1>
+<h1>Weasley <small>Private inbox assistant</small></h1><p>Find unresolved email requests with a model running on your device.</p><button id="mail">Open Needs your reply →</button><details><summary>Typing prototype / advanced</summary>
 <label><input id="enabled" type="checkbox"> Enable suggestions</label>
 <label>Model <select id="model"><option value="Qwen3.5-0.8B-q4f16_1-MLC">Small · 0.8B</option><option value="Qwen3.5-2B-q4f16_1-MLC">Balanced · 2B · recommended</option><option value="Qwen3.5-4B-q4f16_1-MLC">Large · 4B</option></select></label>
 <button id="try">Try it</button> <button id="load">Download / load model</button><output id="status" aria-live="polite"></output><output id="pageStatus" aria-live="polite"></output>
@@ -12,4 +12,4 @@
 <h2>Automatic context</h2><pre id="contextPreview">Context is collected when you type.</pre>
 <h2>Local performance</h2><pre id="stats"></pre><button id="reset">Clear statistics</button>
 </details><p>Tab accepts · Alt+Right accepts a word · Escape dismisses. Ordinary inputs and textareas only.</p>
-<script type="module" src="popup.js"></script></body></html>
+</details><script type="module" src="popup.js"></script></body></html>
