@@ -1,6 +1,6 @@
 export const modelId = 'Qwen3.5-2B-q4f16_1-MLC';
-export interface Settings { enabled: boolean; model: string; sites: string[]; delay: number; tokens: number; maxWords: number; promptMode: "instructed" | "raw"; }
-export const defaults: Settings = { enabled: true, model: modelId, sites: [], delay: 250, tokens: 15, maxWords: 3, promptMode: "instructed" };
+export interface Settings { enabled: boolean; model: string; sites: string[]; delay: number; maxWords: number; }
+export const defaults: Settings = { enabled: true, model: modelId, sites: [], delay: 250, maxWords: 3 };
 export const settings = async (): Promise<Settings> => ({ ...defaults, ...((await chrome.storage.local.get('settings')).settings as Partial<Settings> || {}) });
 export function allowed(url: string, s: Settings) { try { return s.enabled && s.sites.includes(new URL(url).origin); } catch { return false; } }
 export function clean(text: string, prefix: string, limit = 80) {

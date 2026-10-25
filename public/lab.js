@@ -1,5 +1,0 @@
-let started=0,keys=0,corrections=0;const field=document.getElementById('typing');
-document.getElementById('start').onclick=()=>{field.value='';keys=0;corrections=0;started=performance.now();field.focus();};
-field.addEventListener('keydown',e=>{if(started){keys++;if(['Backspace','Delete'].includes(e.key))corrections++;}});
-document.getElementById('finish').onclick=()=>{if(!started)return;const ms=performance.now()-started,target=document.getElementById('task').textContent,text=field.value;let mismatch=0;for(let i=0;i<Math.max(text.length,target.length);i++)if(text[i]!==target[i])mismatch++;
-const row={mode:document.getElementById('mode').value,seconds:+(ms/1000).toFixed(2),keys,corrections,characters:text.length,mismatchedPositions:mismatch,effectiveWPM:+(Math.max(0,text.length-mismatch)/5/(ms/60000)).toFixed(1),exact:text===target};const trials=JSON.parse(localStorage.getItem('weasley-trials')||'[]');trials.push(row);localStorage.setItem('weasley-trials',JSON.stringify(trials.slice(-50)));document.getElementById('result').textContent=JSON.stringify(trials,null,2);started=0;};

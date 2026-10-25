@@ -1,9 +1,10 @@
 import {execFileSync} from 'node:child_process';
 import {build} from 'esbuild';
-import {mkdir, cp, writeFile, readFile} from 'node:fs/promises';
+import {mkdir, cp, writeFile, readFile, rm} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {prebuiltAppConfig} from '@mlc-ai/web-llm';
 await mkdir('dist', {recursive:true});
+await rm('dist/lab.js',{force:true});
 await cp('public','dist',{recursive:true});
 // Executable model libraries are packaged, never fetched by the installed extension.
 const ids = ['0.8','2','4'].map(n=>`Qwen3.5-${n}B-q4f16_1-MLC`);

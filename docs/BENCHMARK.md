@@ -5,11 +5,11 @@ Run date: October 25, 2026. Linux x86_64 cloud instance, Node 24.19.0, Chromium 
 | Check | Observed result |
 | --- | --- |
 | TypeScript strict type check | Passed |
-| Unit tests | Six passed: origin consent, output filtering, partial-word extraction, port consent, short/truncated output handling, context bounds and prompt separation |
+| Unit tests | Nine passed: consent/filtering/word-boundary utilities plus offscreen lifecycle and internal-page authorization tests using mocked inference/Chrome APIs |
 | Build | Passed, all entry points bundled |
 | Model library compatibility | All three requested Qwen3.5 sizes exist in installed WebLLM 0.2.86 registry |
 | WASM integrity | Three modules pass native WebAssembly validation; SHA-256 digests pinned in scripts/model-lock.json |
-| Native browser editing | Passed: explicit Tab insertion, undo, Escape dismissal, stale-response invalidation, password exclusion, IME exclusion, partial-word acceptance, other sensitive-field exclusions, textarea acceptance/undo, and selected-context filtering/clearing |
+| Native browser editing | Passed: explicit Tab insertion, undo, Escape dismissal, stale-response invalidation, password exclusion, IME exclusion, partial-word acceptance, other sensitive-field exclusions, textarea acceptance/undo, and automatic-context filtering (including CSS visibility/opacity), busy retries, simple-page structure and visible error handling |
 | Typing lab / benchmark HTTP requests | Served successfully |
 | Full extension startup | BLOCKED by Chromium administrator policy: “Loading of unpacked extensions is disabled by the administrator.” |
 | GPU probe | No WebGPU adapter returned; /dev/dri is absent |
@@ -23,13 +23,12 @@ The browser editing and context checks use an explicit mocked inference transpor
 
 ## Reproduce on supported hardware
 
-Build the extension and start the lab server using README.md. On an extension-permitted Chrome with WebGPU:
+Load version 0.3 on a target Mac. Open Weasley, load the model and click Try it. The bundled test runs directly inside the extension: no Terminal, server, selection, trial labels or start/stop buttons. Type in its single textarea beneath the preamble. Confirm the suggestion uses the stated Friday/noon meeting context, and read the status line if nothing appears. Also verify Tab, Escape, native undo/redo and typing during inference.
 
-1. Load the extension unpacked. Approve a model load in the popup. Confirm download progress and ready status; reload it once more to verify cache reuse.
-2. Allow the lab origin and reload the test page. Confirm a real model-generated continuation appears before accepting it. Try typing during inference, changing tabs, password fields, IME input, native undo/redo, and engine reset/reload. Use two allowed tabs to confirm model reuse and tab-scoped cancellation.
-3. Open `/benchmark.html` on the lab server. Click the explicit approval button, export the six real samples per model, and compare cold/cached load time and generation TTFT/completion p50/p95. Record GPU/Chrome/macOS versions, memory, battery state, and thermal conditions. Add idle delay and messaging overhead when interpreting pause-to-ghost latency; default idle delay alone is 250 ms. The 200 ms aspiration is not met or claimed by this unmeasured default.
-4. In the typing lab, compare assisted and unassisted runs of the same task in both orders. Use popup settings to toggle assistance; the trial selector merely labels results. Record total time, corrected effective WPM, correctness, corrections, accepted/rejected suggestions, and physical keys. Include pauses spent reading predictions. Reject a keystroke-saving result as a speed improvement if total time or correctness worsens.
+For an allowed external page, confirm automatic context includes relevant rendered passages and excludes navigation, hidden/private text, controls and other drafts. Test both an already-allowed tab and the built-in test. Reloading the extension requires reloading the model from cache; switching models requires Load. Use GPU reset/reload after a device/worker failure.
 
-Phases 2–3 (rich text, distinct alternatives, adaptive/calibrated confidence gating, optimization, personalization) remain experiments. No production readiness, sub-200-ms generation, calibrated confidence, or net typing-speed benefit has been established.
+The optional separate benchmark is still served with `npm run serve` at `/benchmark.html`. It uses fixed prompts and fixed background, not arbitrary browsing text. It compares instructed continuation (64-token safety budget, early word stop) against raw completion, exports six real samples per model and reports cold/cached load time and TTFT/completion p50/p95. Record GPU/macOS/Chrome version, memory, battery and thermal state. Inference timings exclude the default 250 ms idle delay and messaging overhead.
 
-Version 0.2 adds default instructed/non-thinking continuation, a three-word cap, explicit selection-only context, preview/clear, and raw-mode comparison. Automated tests verify context filtering, routing, clearing, word boundaries, and native editing; real model quality of this experiment has not been measured here. The benchmark page now offers both strategies on fixed prompts and fixed relevant background.
+The old transcription/trial controls were removed from the primary page as requested. Numeric popup counters remain diagnostic estimates; no human words-per-minute or net typing-time benefit has been established. Future controlled studies should compare total elapsed time and correctness, including the cost of reading rejected suggestions.
+
+Version 0.3 specifically addresses silent failure handling and simplifies interaction. It does not establish that the exact Mac failure was reproduced or that real model quality improved. Full extension/GPU testing remains blocked in this cloud environment. Rich text, distinct alternatives, calibrated confidence gating, optimization and personalization remain future work.

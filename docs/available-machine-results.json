@@ -1,5 +1,6 @@
 {
   "extensionStartupBlocked": "Error: cdpSession.send: Protocol error (Extensions.loadUnpacked): Loading of unpacked extensions is disabled by the administrator.",
+  "simplePage": true,
   "gpu": {
     "available": false
   },
@@ -12,12 +13,14 @@
   "partialAcceptance": true,
   "otherSensitiveFieldsExcluded": true,
   "textareaAcceptanceAndUndo": true,
-  "selectedContextFilteredAndCleared": true,
+  "automaticContextFiltered": true,
+  "busyRetry": true,
+  "errorsVisible": true,
   "modelBenchmark": {
-    "at": "2026-10-25T18:25:19.868Z",
+    "at": "2026-10-25T18:42:36.893Z",
     "model": "Qwen3.5-2B-q4f16_1-MLC",
     "error": "Error: No WebGPU adapter. Inference benchmark cannot run.",
-    "elapsedMs": 6
+    "elapsedMs": 4.600000001490116
   },
   "note": "Editing checks use mocked inference; no model throughput or quality claim."
 }

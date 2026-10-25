@@ -22,9 +22,12 @@ chrome.runtime.onMessage.addListener((m,sender,reply) => {
  void (async () => {
   try {
    const s = await settings();
-   if (sender.tab) {
-    if(!allowed(sender.url || '',s) || !['predict','cancel','metric'].includes(m.kind)) { reply({text:''}); return; }
-   } else if(sender.url !== chrome.runtime.getURL('popup.html')) { reply({error:'Unauthorized'}); return; }
+   const lab=sender.url===chrome.runtime.getURL('test.html');
+   const popup=sender.url===chrome.runtime.getURL('popup.html');
+   const pageCommand=['predict','cancel','metric'].includes(m.kind);
+   if(lab){if(!s.enabled||!pageCommand){reply({text:'',error:'Enable Weasley to use the test page.'});return;}}
+   else if(sender.tab){if(!allowed(sender.url||'',s)||!pageCommand){reply({text:'',error:'This website is not enabled in Weasley.'});return;}}
+   else if(!popup){reply({text:'',error:'Unauthorized'});return;}
    if(m.kind==='metric') {
     metricQueue=metricQueue.catch(()=>{}).then(async()=>{
     const metrics=((await chrome.storage.local.get('metrics')).metrics || []) as any[];
@@ -32,9 +35,9 @@ chrome.runtime.onMessage.addListener((m,sender,reply) => {
     const event={at:Date.now(),kind:['shown','accepted','rejected'].includes(m.event)?m.event:'shown', keys:Math.max(1,Math.min(2,Number(m.keys)||1)), chars:Math.max(0,Number(m.chars)||0),ttft:Math.max(0,Number(m.ttft)||0),total:Math.max(0,Number(m.total)||0)};
     await chrome.storage.local.set({metrics:[...metrics.slice(-499),event]}); }); await metricQueue; reply({}); return;
    }
-   if(m.kind==='predict' && (typeof m.prefix!=='string' || m.prefix.length>1800 || typeof m.context!=='string' || m.context.length>1200)) {reply({text:''});return;}
+   if(m.kind==='predict' && (typeof m.prefix!=='string' || m.prefix.length>1800 || typeof m.context!=='string' || m.context.length>1200)) {reply({text:'',error:'Prediction request exceeds the supported text/context size.'});return;}
    if(m.kind==='resetEngine') { if(await chrome.offscreen.hasDocument()) await chrome.offscreen.closeDocument(); reply({ok:true}); return; }
-   await ensure(); reply(await chrome.runtime.sendMessage({...m,settings:s,owner:sender.tab?.id ?? 'popup',target:'engine'}));
+   await ensure(); reply(await chrome.runtime.sendMessage({...m,settings:s,owner:sender.tab?.id ?? (lab?sender.documentId||'lab':'popup'),target:'engine'}));
   } catch(e) {reply({error:String(e),text:''});}
  })(); return true;
 });

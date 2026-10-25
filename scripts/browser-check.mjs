@@ -10,12 +10,14 @@ try {
  results.offscreenStatus=await popup.locator('#status').textContent();assert.match(results.offscreenStatus,/Not loaded/);
  } catch(e) {if(!String(e).includes('disabled by the administrator'))throw e;results.extensionStartupBlocked=String(e);}
  const page=await ctx.newPage();await page.goto('http://127.0.0.1:4173/test.html');
+ assert.equal(await page.locator('textarea,input').count(),1);assert.equal(await page.locator('button,select').count(),0);results.simplePage=true;
+ await page.evaluate(()=>{const fixture=document.createElement('section');fixture.innerHTML='<label>Ordinary <input id=ordinary></label><input type=password><input type=email><input autocomplete=cc-number><div contenteditable=true>Editable</div>';document.body.append(fixture);});
  results.gpu=await page.evaluate(async()=>{try{return {available:!!(await navigator.gpu?.requestAdapter())};}catch(e){return {available:false,reason:String(e)};}});
  await page.evaluate(()=>{window.events=[];window.requests=[];window.reply=' world';window.wait=10;
  window.contextListener=null;window.chrome={storage:{local:{get:async()=>({settings:{enabled:true,sites:[location.origin],delay:100,tokens:10,model:'test'}})},onChanged:{addListener:()=>{}}},runtime:{id:'test-extension',getURL:path=>'chrome-extension://test-extension/'+path,onMessage:{addListener:fn=>window.contextListener=fn},sendMessage:async m=>{window.events.push(m);if(m.kind==='predict'){window.requests.push(m);const text=window.reply;await new Promise(r=>setTimeout(r,window.wait));return {text,ttft:8,total:10};}return {};}}};});
  await page.addScriptTag({path:'dist/content.js'});
  const input=page.locator('#ordinary');await input.focus();await input.pressSequentially('Hello');await page.waitForTimeout(180);
- assert.equal(await input.inputValue(),'Hello');assert.ok(await page.evaluate(()=>events.some(x=>x.event==='shown')));
+ assert.equal(await input.inputValue(),'Hello');assert.ok(await page.evaluate(()=>events.some(x=>x.event==='shown')));assert.equal(await page.locator('div[data-weasley-ui]').evaluate(el=>getComputedStyle(el).pointerEvents),'none');
  await input.press('Tab');assert.equal(await input.inputValue(),'Hello world');results.tabAcceptance=true;
  await input.press('Control+z');assert.equal(await input.inputValue(),'Hello');results.nativeUndo=true;
  await input.press('End');await input.pressSequentially(' again');await page.waitForTimeout(180);await input.press('Escape');await input.press('Tab');assert.equal(await input.inputValue(),'Hello again');results.escape=true;
@@ -28,13 +30,14 @@ try {
  for(const selector of ['input[type=email]','input[autocomplete="cc-number"]','[contenteditable=true]']){const n=await page.evaluate(()=>requests.length);await page.locator(selector).fill('excluded');await page.waitForTimeout(180);assert.equal(await page.evaluate(()=>requests.length),n);}results.otherSensitiveFieldsExcluded=true;
  const textarea=page.locator('#typing');await textarea.fill('Textarea');await textarea.focus();await textarea.press('End');await textarea.pressSequentially(' test');await page.waitForTimeout(180);await textarea.press('Tab');assert.equal(await textarea.inputValue(),'Textarea test useful words');await textarea.focus();await textarea.press('Control+z');assert.equal(await textarea.inputValue(),'Textarea test');results.textareaAcceptanceAndUndo=true;
 
- const contextResult=await page.evaluate(()=>{
- const fixture=document.createElement('section');fixture.innerHTML='<p id="thread">The meeting is on Friday at noon.</p><nav>irrelevant menu</nav><p data-private>private account data</p><div contenteditable="true">private draft</div><p hidden>hidden data</p>';document.body.append(fixture);
- const selection=getSelection(),range=document.createRange();range.selectNodeContents(fixture);selection.removeAllRanges();selection.addRange(range);
- let result;contextListener({kind:'captureContext'},{id:'test-extension',url:'chrome-extension://test-extension/popup.html'},r=>result=r);return result;
- });assert.equal(contextResult.context,'The meeting is on Friday at noon.');
- await input.fill('Contextual');await input.focus();await input.press('End');await input.pressSequentially(' draft');await page.waitForTimeout(180);assert.equal(await page.evaluate(()=>requests.at(-1).context),'The meeting is on Friday at noon.');
- await page.evaluate(()=>contextListener({kind:'clearContext'},{id:'test-extension',url:'chrome-extension://test-extension/popup.html'},()=>{}));await input.pressSequentially(' again');await page.waitForTimeout(180);assert.equal(await page.evaluate(()=>requests.at(-1).context),'');results.selectedContextFilteredAndCleared=true;
+ await page.evaluate(()=>{
+ const fixture=document.createElement('section');fixture.innerHTML='<p>The design review is on Friday at noon.</p><nav>MENU_JUNK_457</nav><p data-private>SECRET_PRIVATE_871</p><div contenteditable="true">SECRET_EDITOR_871</div><p hidden>SECRET_HIDDEN_871</p><p><span style="visibility:hidden">SECRET_CSS_HIDDEN_871</span></p><p style="opacity:0">SECRET_OPACITY_871</p><input value="SECRET_FORM_871">';document.body.append(fixture);fixture.append(document.getElementById('ordinary'));});
+ await input.fill('The design review');await input.focus();await input.press('End');await input.pressSequentially(' is');await page.waitForTimeout(180);
+ const contextResult=await page.evaluate(()=>requests.at(-1).context);assert.match(contextResult,/Friday at noon/);assert.doesNotMatch(contextResult,/SECRET_|MENU_JUNK/);results.automaticContextFiltered=true;
+ // Busy responses must retry without requiring another keystroke.
+ await page.evaluate(()=>{window.busyReplies=2;window.reply=' works well';const original=chrome.runtime.sendMessage;chrome.runtime.sendMessage=async m=>{if(m.kind==='predict'&&window.busyReplies-->0)return {text:'',reason:'busy'};return original(m);};});
+ await input.pressSequentially(' now');await page.waitForTimeout(550);assert.equal(await page.evaluate(()=>window.busyReplies),-1);await input.press('Tab');assert.match(await input.inputValue(),/works well$/);results.busyRetry=true;
+ await page.evaluate(()=>{chrome.runtime.sendMessage=async()=>({text:'',error:'TEST_ENGINE_ERROR'});});await textarea.focus();await textarea.press('End');await textarea.pressSequentially(' test');await page.waitForTimeout(180);assert.match(await page.locator('[data-weasley-status]').textContent(),/TEST_ENGINE_ERROR/);results.errorsVisible=true;
  const bench=await ctx.newPage();await bench.goto('http://127.0.0.1:4173/benchmark.html');await bench.locator('#run').click();await bench.waitForFunction(()=>!document.querySelector('#export').disabled);results.modelBenchmark=JSON.parse(await bench.locator('#result').textContent());
  results.note='Editing checks use mocked inference; no model throughput or quality claim.';
  console.log(JSON.stringify(results,null,2));

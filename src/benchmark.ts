@@ -1,4 +1,4 @@
-import {continuationMessages,shortContinuation} from './prediction';
+import {continuationMessages,shortContinuation,phraseComplete} from './prediction';
 import {WebWorkerMLCEngine,prebuiltAppConfig} from '@mlc-ai/web-llm';
 const output=document.getElementById('result')!,button=document.getElementById('run') as HTMLButtonElement,exportButton=document.getElementById('export') as HTMLButtonElement;
 let result:object;
@@ -19,8 +19,8 @@ button.onclick=async()=>{
   for(let round=0;round<2;round++)for(const prompt of prompts){
    await engine.resetChat();const t=performance.now();let first=0,text='',truncated=false;
    if(strategy==='instructed'){
-    const stream=await engine.chat.completions.create({messages:continuationMessages(prompt,context),stream:true,max_tokens:15,temperature:.1,extra_body:{enable_thinking:false}});
-    for await(const c of stream){const value=c.choices[0]?.delta.content||'';if(value&&!first)first=performance.now()-t;text+=value;if(c.choices[0]?.finish_reason==='length')truncated=true;}
+    const stream=await engine.chat.completions.create({messages:continuationMessages(prompt,context),stream:true,max_tokens:64,temperature:.1,extra_body:{enable_thinking:false}});
+    for await(const c of stream){const value=c.choices[0]?.delta.content||'';if(value&&!first)first=performance.now()-t;text+=value;if(c.choices[0]?.finish_reason==='length')truncated=true;if(phraseComplete(text,3)){engine.interruptGenerate();break;}}
    }else{
     const stream=await engine.completions.create({prompt,stream:true,max_tokens:15,temperature:.15,stop:['\n','<|im_end|>','<|endoftext|>']});
     for await(const c of stream){const value=c.choices[0]?.text||'';if(value&&!first)first=performance.now()-t;text+=value;if(c.choices[0]?.finish_reason==='length')truncated=true;}
