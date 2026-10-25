@@ -1,0 +1,24 @@
+{
+  "name": "weasley",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "serve": "node scripts/serve.mjs",
+    "test:browser": "node scripts/browser-check.mjs",
+    "package": "npm run build && node scripts/package.mjs"
+  },
+  "dependencies": {
+    "@mlc-ai/web-llm": "0.2.86"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.24",
+    "esbuild": "^0.25.0",
+    "playwright-core": "^1.56.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}
