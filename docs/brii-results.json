@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-30T04:11:54.613Z",
+  "at": "2026-10-30T04:12:43.951Z",
   "environment": {
     "os": "Linux",
     "browser": "Chromium 154.0.8037.57",
@@ -47,7 +47,15 @@
       "undoInvalidatesPendingResponse": true,
       "longChunksNotClippedOrApplied": true,
       "benchmarkExportAndExplicitSemanticReview": true,
-      "invalidReplyRejectedButTimingVisible": true
+      "invalidReplyRejectedButTimingVisible": true,
+      "unchangedEchoRetriedWithLaterWords": true,
+      "webgpu": {
+        "available": false,
+        "shaderF16": false
+      },
+      "realModelProbe": "Error: No WebGPU adapter is available. Use a WebGPU-enabled Chrome; no inference benchmark can run here.",
+      "realInferenceMeasured": false,
+      "note": "All editing, fixture benchmark timings and fixture CER/WER are mocked transport checks, not model performance or quality. realModelProbe uses the production backend without the mock."
     },
     "legacyTypingBrowserChecks": "passed with known administrator-policy/WebGPU blockers explicitly reported",
     "legacyMailBrowserChecks": "passed against explicit fixtures"
