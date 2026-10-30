@@ -1,5 +1,5 @@
 {
-  "model": "gpt-4.1-mini",
+  "model": "gpt-4.1",
   "measured": false,
   "note": "Live comparison not run: OPENAI_API_KEY is not configured. No requests were made.",
   "rows": []

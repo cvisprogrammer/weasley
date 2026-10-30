@@ -7,7 +7,7 @@ const {extensionId}=JSON.parse(await readFile('public/cloud-config.json','utf8')
 let delay=0,calls=[];
 const outputs={teh:'The','teh cta':'The cat','teh cta link':'The cat link'};
 const server=createCloudServer({extensionId,apiKey:'fixture-only',fetcher:async(url,request)=>{
- const body=JSON.parse(request.body),raw=JSON.parse(body.input).raw;calls.push(raw);
+ const body=JSON.parse(request.body),raw=body.input.split('Text to correct:\n')[1];calls.push(raw);
  await new Promise(r=>setTimeout(r,delay));return new Response(JSON.stringify({status:'completed',output_text:outputs[raw]??raw}));
 }});server.listen(0,'127.0.0.1');await once(server,'listening');const bridge='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/usr/lib/chromium/chromium',headless:true,args:['--no-sandbox']});

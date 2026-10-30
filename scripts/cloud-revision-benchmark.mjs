@@ -1,11 +1,11 @@
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
-import {correctionPayload,outputText,DECODER_STRATEGY} from './cloud-server.mjs';
-const apiKey=process.env.OPENAI_API_KEY,model=process.env.OPENAI_MODEL||'gpt-4.1-mini';
+import {correctionPayload,outputText,DRAFT_STRATEGY} from './cloud-server.mjs';
+const apiKey=process.env.OPENAI_API_KEY,model=process.env.OPENAI_MODEL||'gpt-4.1';
 const report={model,measured:false,note:'One request per case/strategy; latency is not a distribution. Inspect outputs for regressions and intended wording. No automatic semantic accuracy claim.',rows:[]};
 if(!apiKey){report.note='Live comparison not run: OPENAI_API_KEY is not configured. No requests were made.';}
 else{
  const dataset=JSON.parse(await readFile(new URL('../public/brii-revision-dataset.json',import.meta.url),'utf8'));
- for(const item of dataset.cases)for(const strategy of ['raw-only-baseline',DECODER_STRATEGY]){
+ for(const item of dataset.cases)for(const strategy of ['raw-only-baseline',DRAFT_STRATEGY]){
   const started=performance.now();let row={id:item.id,strategy,raw:item.raw,current:item.current,review:item.review};
   try{
    const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},body:JSON.stringify(correctionPayload({model,text:item.raw,current:item.current,context:item.context},strategy)),signal:AbortSignal.timeout(45000),redirect:'error'});
