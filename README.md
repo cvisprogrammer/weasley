@@ -1,6 +1,6 @@
 # Brii Flow
 
-Brii reconstructs sloppy typing using the original cloud decoder prompt and **gpt-4.1-mini**. The default Chrome extension now uses a small loopback helper; the API key stays in that helper, outside Chrome. Cloud correction is off until you enable it and allow a website.
+Brii reconstructs sloppy typing using **gpt-4.1-mini**. The current experiment adds the current draft alongside raw typing, with instructions to preserve good reconstructions while reconsidering errors. The default Chrome extension now uses a small loopback helper; the API key stays in that helper, outside Chrome. Cloud correction is off until you enable it and allow a website.
 
 ## Run from source
 
@@ -36,7 +36,7 @@ Space triggers correction after a short configurable delay; Cmd/Ctrl+Enter corre
 
 Paragraph-style composers are browser-tested with fixtures; live ChatGPT, Gmail, Wikipedia visual editing, and other framework-managed editors are **not verified** here and can reject external edits. **Google Docs' canvas editor remains unsupported.** Password and sensitive fields are excluded. Allowed same-origin result frames, including inherited-origin about:blank/srcdoc frames, are supported; a separately hosted frame requires its own origin to be allowed. A Brii status indicator appears when you focus a supported field. A missing indicator means attachment has not been confirmed.
 
-On allowed sites, completed text (up to 600 characters) and up to 400 preceding characters from the same field go to OpenAI through the loopback helper. There is no webpage harvesting. Cloud corrections may incur API charges. Requests use `store:false`; that does not imply zero provider retention. No API key or text is persistently saved by Brii. Disabling cloud correction stops new requests and aborts pending requests where possible; it cannot retract text already sent.
+On allowed sites, completed text (up to 600 characters), the current displayed draft of that same span (up to 600 characters), and up to 400 preceding characters from the same field go to OpenAI through the loopback helper. There is no webpage harvesting. Cloud corrections may incur API charges. Requests use `store:false`; that does not imply zero provider retention. No API key or text is persistently saved by Brii. Disabling cloud correction stops new requests and aborts pending requests where possible; it cannot retract text already sent.
 
 The helper binds only to 127.0.0.1, checks the extension's public identity, validates Host/Origin, and never accepts a caller-supplied upstream URL. These checks protect against ordinary website requests, not other programs running on your computer.
 
@@ -52,6 +52,20 @@ npm run package
 ```
 
 The cloud tests use an explicit fake provider. Browser checks cover opt-in, website gating, native Undo, continued typing, caret preservation, and excluded fields. Rich-editor checks additionally cover formatting/links, paragraphs and line breaks, mid-document typing, caret and selection mapping, Undo/Redo, stale results, and embedded objects. No OpenAI key is configured in the cloud workspace, so live decoding quality and actual cloud latency are **unmeasured**. The UI reports end-to-end latency; this non-streaming path does not measure first-token latency. Unpacked extension installation is blocked by the workspace's Chromium administrator policy; the real content bundle is browser-tested with simulated Chrome transport.
+
+## Test raw + current draft decoding
+
+This experiment uses `raw-current-v1` and sends a JSON object with `raw`, `current_draft`, and `context`. The current draft is captured at request time; new typing that arrives while inference is pending is excluded. Both raw and draft are treated as untrusted data. The prompt asks the model to preserve correct reconstructions while using the raw input to reconsider earlier errors. This is an experiment, not a guarantee against regressions.
+
+After updating/building, **stop the running bridge with Ctrl+C and restart `npm run cloud`**, reload the extension, and refresh your test page. Old bridge responses are rejected rather than silently running the old prompt. The model and generation settings are unchanged.
+
+For a live A/B comparison with `OPENAI_API_KEY` set in your terminal:
+
+```sh
+npm run benchmark:cloud
+```
+
+This makes six billable API requests: three examples, once with the original raw-only prompt and once with the new prompt/draft input. Edit `public/brii-revision-dataset.json` to add examples. It prints both outputs and end-to-end response latency, and saves `artifacts/cloud-revision-benchmark.json`. Review whether the results preserve intended wording and avoid regressions; one sample is not a quality or latency distribution. Only this explicitly invoked benchmark saves its static dataset inputs/outputs; normal editing diagnostics remain transient. No API key is configured in the cloud workspace, so live quality/latency for the new strategy remain unmeasured.
 
 ## Preserved local experiment
 

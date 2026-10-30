@@ -14,6 +14,7 @@
     "brii": "npm run build && npm run serve",
     "test:brii-browser": "node scripts/brii-browser-check.mjs",
     "cloud": "node scripts/cloud-server.mjs",
+    "benchmark:cloud": "node scripts/cloud-revision-benchmark.mjs",
     "test:cloud-browser": "node scripts/cloud-browser-check.mjs",
     "test:rich-browser": "node scripts/rich-browser-check.mjs"
   },

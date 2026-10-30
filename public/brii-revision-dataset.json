@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "note": "Observed failures and plausible intended wording. Review actual outputs manually; references are not a calibrated quality score.",
+  "cases": [
+    {
+      "id": "have-regression",
+      "raw": "oktestingagain iwonderifitllworkthsitime orillhvatokeeptryingagiangandagina",
+      "current": "ok testing again i wonder if it ll work this time or i ll have to keep trying again and again",
+      "context": "",
+      "review": "Preserve the already decoded word have; do not regress to hve. Apostrophes can still need correction."
+    },
+    {
+      "id": "try-again",
+      "raw": "okletstryiagianseefititwroks",
+      "current": "ok let trying again see if it works",
+      "context": "",
+      "review": "Use raw lets to reconsider let trying as let's try; the current draft is evidence, not ground truth."
+    },
+    {
+      "id": "preserve-casual-wording",
+      "raw": "nahitsfine letsjusttryit",
+      "current": "nah it's fine let's just try it",
+      "context": "",
+      "review": "Preserve casual wording; no embellishment or unnecessary replacement of correct words."
+    }
+  ]
+}

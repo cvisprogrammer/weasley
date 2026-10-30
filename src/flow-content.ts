@@ -15,7 +15,7 @@ if(!global.__briiFlow){global.__briiFlow=true;let config:CloudSettings|undefined
   for(const item of flows)if(!item.element.isConnected){item.flow.invalidate();flows.delete(item);}
   known.add(element);
   const decoder=new CloudDecoder(extensionTransport);
-  const flow=new BriiFlow(plain?element:new RichEditor(element),{rolling:true,active:()=>active()&&(plain?safeField(element):richHost(element)===element),trustedOnly:true,ready:active,automatic:()=>!!config?.automatic,delay:()=>config?.delay??80,decodingStatus:'Decoding with OpenAI… keep typing.',decode:(text,context)=>decoder.decode(text,context),cancel:()=>decoder.cancel(),status:show,result:r=>{if(!active()){last.clear();return;}last.update(r);show(resultLabel(r)+(r.applied?' · Undo to restore':''));}});
+  const flow=new BriiFlow(plain?element:new RichEditor(element),{rolling:true,active:()=>active()&&(plain?safeField(element):richHost(element)===element),trustedOnly:true,ready:active,automatic:()=>!!config?.automatic,delay:()=>config?.delay??80,decodingStatus:'Decoding with OpenAI… keep typing.',decode:(text,context,current)=>decoder.decode(text,context,current),cancel:()=>decoder.cancel(),status:show,result:r=>{if(!active()){last.clear();return;}last.update(r);show(resultLabel(r)+(r.applied?' · Undo to restore':''));}});
   flows.add({element,flow});
  }
  document.addEventListener('focusin',event=>{if(event.isTrusted)attach(event.target as Element);},true);

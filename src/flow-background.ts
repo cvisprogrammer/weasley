@@ -10,8 +10,8 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{if(sender.id!==chrome.ru
   if(!(lab?s.enabled:!!sender.tab&&cloudFrameAllowed(sender.url||'',sender.origin,s))){reply({error:'Enable cloud correction for this website first.'});return;}
   const owner=sender.documentId||String(sender.tab?.id||'lab'),id=typeof m.requestId==='string'?m.requestId.slice(0,100):'',key=owner+':'+id;
   if(m.kind==='cancel'){pending.get(key)?.abort();pending.delete(key);reply({ok:true});return;}
-  if(m.kind!=='decode'||!id||typeof m.text!=='string'||!m.text.trim()||m.text.length>600||typeof m.context!=='string'||m.context.length>400){reply({error:'Invalid correction request.'});return;}
+  if(m.kind!=='decode'||!id||typeof m.text!=='string'||!m.text.trim()||m.text.length>600||typeof m.current!=='string'||!m.current.trim()||m.current.length>600||typeof m.context!=='string'||m.context.length>400){reply({error:'Invalid correction request.'});return;}
   const abort=new AbortController();pending.set(key,abort);
-  try{const r=await fetch(BRIDGE+'/correct',{method:'POST',headers:{'Content-Type':'application/json','X-Brii-Extension':chrome.runtime.id},body:JSON.stringify({text:m.text,context:m.context}),signal:AbortSignal.any([abort.signal,AbortSignal.timeout(50000)]),cache:'no-store',redirect:'error'});const data=await r.json();reply(r.ok?data:{error:data.error||'Cloud correction failed.'});}finally{pending.delete(key);}
+  try{const r=await fetch(BRIDGE+'/correct',{method:'POST',headers:{'Content-Type':'application/json','X-Brii-Extension':chrome.runtime.id},body:JSON.stringify({text:m.text,context:m.context,current:m.current}),signal:AbortSignal.any([abort.signal,AbortSignal.timeout(50000)]),cache:'no-store',redirect:'error'});const data=await r.json();reply(r.ok?data:{error:data.error||'Cloud correction failed.'});}finally{pending.delete(key);}
  }catch{reply({error:'Cloud request cancelled or bridge unavailable. Start npm run cloud; original text is preserved.'});}})();return true;
 });

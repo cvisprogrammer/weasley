@@ -3,7 +3,7 @@ import {PlainEditor,type EditorSurface} from './editor';
 import {RollingDraft} from './rolling';
 import {segmentAt,sentenceStart,planReplacement,type DecodeResult,type Segment,type Selection} from './decoding';
 export interface FlowResult {unprocessedTail?:boolean;segment:Segment;result:DecodeResult;applied:boolean;unchanged:boolean;reason:string;elapsedMs:number;}
-export interface FlowOptions {rolling?:boolean;active?:()=>boolean;trustedOnly?:boolean;decodingStatus?:string;ready:()=>boolean;automatic:()=>boolean;delay:()=>number;decode:(text:string,context:string)=>Promise<DecodeResult>;cancel:()=>void;status:(text:string)=>void;result:(result:FlowResult)=>void;changed?:()=>void;}
+export interface FlowOptions {rolling?:boolean;active?:()=>boolean;trustedOnly?:boolean;decodingStatus?:string;ready:()=>boolean;automatic:()=>boolean;delay:()=>number;decode:(text:string,context:string,current?:string)=>Promise<DecodeResult>;cancel:()=>void;status:(text:string)=>void;result:(result:FlowResult)=>void;changed?:()=>void;}
 // One in-flight operation plus one latest boundary. Editing uses the browser’s native undo history.
 export class BriiFlow {
  private draft=new RollingDraft();private pauseTimer?:ReturnType<typeof setTimeout>;private epoch=0;private frontier=0;private pending=false;private applying=false;private composing=false;private previous:string;private before?:Caret;private compositionBefore?:Caret;
@@ -59,7 +59,7 @@ export class BriiFlow {
   if(!this.options.ready()||queued.epoch!==this.epoch||(!queued.manual&&!this.options.automatic())||!this.editor.isFocused()||this.editor.selectionStart<queued.boundary){this.options.status('Queued correction skipped after focus, selection, model, or mode changed.');return;}
   let segment:Segment|undefined;try{segment=this.options.rolling?this.draft.segment(this.editor.value,queued.boundary,queued.wholeSentence||queued.manual,queued.manual):segmentAt(this.editor.value,queued.boundary,this.frontier,queued.manual);}catch(e){this.options.status(String(e));return;}if(!segment)return;if(!this.editor.canReplace(segment.start,segment.end)){this.options.status('This range contains unsupported formatting or embedded content; original text preserved.');return;}
   const started=queued.at;this.pending=true;this.options.status(this.options.decodingStatus||'Decoding locally… keep typing.');
-  void this.options.decode(segment.raw,segment.context).then(result=>{
+  void this.options.decode(segment.raw,segment.context,segment.prefix.slice(segment.start,segment.end)).then(result=>{
    let applied=false,unchanged=false,reason=result.validationError?'Correction not applied: '+result.validationError:'Result discarded after an edit, selection change, blur, or composition.';
    if(this.active()&&!result.validationError&&queued.epoch===this.epoch&&!this.composing&&this.editor.isFocused()){
     const selection:Selection={start:this.editor.selectionStart,end:this.editor.selectionEnd,direction:this.editor.selectionDirection};

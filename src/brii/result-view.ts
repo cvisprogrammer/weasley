@@ -10,7 +10,7 @@ export function resultView(){
  return {element,clear(){element.hidden=true;element.open=false;body.replaceChildren();summary.textContent='Last result';},update(result:FlowResult){
   summary.textContent='Last result · '+(result.applied?'suggestion applied':result.unchanged?'no visible change':'not applied');
   body.replaceChildren();const info=document.createElement('p');info.textContent=`${result.result.model||'Model not reported'} · ${resultLabel(result)}. “Applied” does not mean correct. ${result.reason}`;body.append(info);
-  const rows=[['Original typing sent',result.segment.raw],['Text shown before request',result.segment.prefix.slice(result.segment.start,result.segment.end)],['Context sent',result.segment.context],['Model response',result.result.corrected]];
+  const rows=[['Original typing sent',result.segment.raw],['Current draft sent',result.segment.prefix.slice(result.segment.start,result.segment.end)],['Context sent',result.segment.context],['Model response',result.result.corrected]];
   for(const [label,text] of rows){const heading=document.createElement('strong'),value=document.createElement('pre');heading.textContent=label;value.textContent=text||'(empty)';value.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;margin:3px 0 10px;';body.append(heading,value);}
   element.hidden=false;
  }};
