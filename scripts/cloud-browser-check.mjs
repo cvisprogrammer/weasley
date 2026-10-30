@@ -15,5 +15,18 @@ try{
  await website.evaluate(()=>{config={...config,enabled:false};for(const f of listeners)f({briiCloud:{newValue:config}},'local');});await field.press('End');await field.pressSequentially(' off ');await website.waitForTimeout(100);assert.equal(calls.length,beforeSecret);results.disableAppliesToExistingControllers=true;
  await website.evaluate(()=>{config={...config,enabled:true};for(const f of listeners)f({briiCloud:{newValue:config}},'local');const e=document.getElementById('field');e.value='teh ';e.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:' '}));});await website.waitForTimeout(150);assert.equal(calls.length,beforeSecret);results.syntheticTypingCannotSpend=true;
  delay=250;await field.fill('smthng');await field.press('Space');await website.waitForFunction(()=>document.querySelector('#field').value==='smthng ');await new Promise(r=>setTimeout(r,50));await field.pressSequentially('tail');await website.waitForFunction(()=>document.querySelector('#field').value==='something tail');assert.equal(await field.evaluate(e=>e.selectionStart),'something tail'.length);results.continuedTypingAndCaretPreserved=true;
+ // Exercise the real popup when Chrome omits URL metadata from tabs.query.
+ const popup=await ctx.newPage();await popup.addInitScript(()=>{
+  window.popupTab={id:7};window.pageURL='https://www.google.com/search?q=test';window.grants=[];window.injections=[];
+  window.chrome={storage:{local:{get:async()=>({briiCloud:{enabled:true,automatic:true,sites:[],delay:80}}),set:async()=>{}}},
+   tabs:{query:async()=>[window.popupTab],create:async()=>{}},
+   scripting:{executeScript:async args=>{if(args.func)return [{result:window.pageURL}];window.injections.push(args);return [];}},
+   permissions:{request:async args=>{window.grants.push(args);return true;},remove:async()=>true},
+   runtime:{sendMessage:async()=>({enabled:true,model:'fixture'}),getURL:p=>'chrome-extension://fixture/'+p}};
+ });
+ await popup.route(base+'/flow-popup.html',r=>r.fulfill({path:'public/flow-popup.html',contentType:'text/html'}));await popup.route(base+'/flow-popup.js',r=>r.fulfill({path:'dist/flow-popup.js',contentType:'text/javascript'}));
+ await popup.goto(base+'/flow-popup.html');await popup.locator('#allow').click();await popup.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Website allowed'));
+ assert.deepEqual(await popup.evaluate(()=>window.grants),[{origins:['https://www.google.com/*']}]);assert.equal(await popup.evaluate(()=>window.injections.length),1);
+ await popup.evaluate(()=>{window.popupTab={id:7,url:'not a URL'};window.pageURL='chrome://extensions/';});await popup.locator('#allow').click();await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('click the Brii toolbar icon'));assert.equal(await popup.evaluate(()=>window.grants.length),1);results.popupMissingURLFallbackAndRestrictedPageMessage=true;
  results.note='The browser-to-loopback-to-provider path is exercised against an injected provider fixture. Actual API quality/latency and administrator-blocked extension installation remain unverified.';console.log(JSON.stringify(results,null,2));
 }finally{await writeFile('artifacts/cloud-browser-check.json',JSON.stringify(results,null,2));await browser.close();await new Promise(r=>server.close(r));}
