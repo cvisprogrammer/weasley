@@ -1,3 +1,4 @@
+import {inputChange,type Caret} from './input-change';
 import {PlainEditor,type EditorSurface} from './editor';
 import {RollingDraft} from './rolling';
 import {segmentAt,sentenceStart,planReplacement,type DecodeResult,type Segment,type Selection} from './decoding';
@@ -5,17 +6,19 @@ export interface FlowResult {unprocessedTail?:boolean;segment:Segment;result:Dec
 export interface FlowOptions {rolling?:boolean;active?:()=>boolean;trustedOnly?:boolean;decodingStatus?:string;ready:()=>boolean;automatic:()=>boolean;delay:()=>number;decode:(text:string,context:string)=>Promise<DecodeResult>;cancel:()=>void;status:(text:string)=>void;result:(result:FlowResult)=>void;changed?:()=>void;}
 // One in-flight operation plus one latest boundary. Editing uses the browser’s native undo history.
 export class BriiFlow {
- private draft=new RollingDraft();private pauseTimer?:ReturnType<typeof setTimeout>;private epoch=0;private frontier=0;private pending=false;private applying=false;private composing=false;private previous:string;private before?:{start:number;end:number};
+ private draft=new RollingDraft();private pauseTimer?:ReturnType<typeof setTimeout>;private epoch=0;private frontier=0;private pending=false;private applying=false;private composing=false;private previous:string;private before?:Caret;private compositionBefore?:Caret;
  private queued?:{boundary:number;manual:boolean;wholeSentence:boolean;epoch:number;due:number;at:number};private timer?:ReturnType<typeof setTimeout>;
  private editor:EditorSurface;
  constructor(editor:HTMLTextAreaElement|HTMLInputElement|EditorSurface,private options:FlowOptions){
   this.editor=editor instanceof HTMLTextAreaElement||editor instanceof HTMLInputElement?new PlainEditor(editor):editor;
   this.previous=this.editor.value;
-  this.editor.addEventListener('beforeinput',()=>{if(!this.applying&&this.active())this.before={start:this.editor.selectionStart,end:this.editor.selectionEnd};});
+  const remember=(event:Event)=>{if(!this.applying&&this.active()&&(!this.options.trustedOnly||event.isTrusted))this.before={start:this.editor.selectionStart,end:this.editor.selectionEnd};};
+  this.editor.addEventListener('beforeinput',remember);
+  this.editor.addEventListener('paste',remember);this.editor.addEventListener('cut',remember);
   this.editor.addEventListener('input',e=>this.input(e as InputEvent));
-  this.editor.addEventListener('compositionstart',()=>{this.composing=true;if(this.active())this.invalidate('IME composition: correction paused.');});
-  this.editor.addEventListener('compositionend',()=>{this.composing=false;if(this.active())this.previous=this.editor.value;});
-  this.editor.addEventListener('keydown',e=>{if(this.active()&&(!this.options.trustedOnly||e.isTrusted)&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!e.isComposing){e.preventDefault();this.manual();}});
+  this.editor.addEventListener('compositionstart',()=>{this.composing=true;if(this.active()){this.compositionBefore={start:this.editor.selectionStart,end:this.editor.selectionEnd};this.before=undefined;this.invalidate('IME composition: correction paused.');}});
+  this.editor.addEventListener('compositionend',event=>{this.composing=false;if(this.active()){this.before=this.compositionBefore;this.compositionBefore=undefined;this.input({isTrusted:event.isTrusted,inputType:'insertCompositionText',data:event.data,isComposing:false} as InputEvent);}});
+  this.editor.addEventListener('keydown',e=>{remember(e);if(this.active()&&(!this.options.trustedOnly||e.isTrusted)&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!e.isComposing){e.preventDefault();this.manual();}});
  }
  private active(){return this.options.active?.()??true;}
  get isBusy(){return this.pending;}
@@ -25,15 +28,16 @@ export class BriiFlow {
  manual(){if(this.composing||!this.active())return;this.editor.focus({preventScroll:true});if(this.editor.selectionStart!==this.editor.selectionEnd){this.options.status('Collapse the selection first. Selected text is never overwritten.');return;}this.enqueue(this.editor.selectionStart,true);}
  private input(event:InputEvent){
   if(this.applying||!this.active()||(this.options.trustedOnly&&!event.isTrusted))return;const value=this.editor.value;
-  clearTimeout(this.pauseTimer);
   const history=event.inputType==='historyUndo'||event.inputType==='historyRedo';
-  // Some editors consume beforeinput. Infer only an exact, collapsed append from
-  // the trusted input's data and unchanged surrounding text; never infer replacements.
-  const caret=this.editor.selectionStart,data=event.data;
-  const inferredAppend=!this.before&&event.inputType==='insertText'&&!!data&&value.length===this.previous.length+data.length&&caret===this.editor.selectionEnd&&value.slice(caret-data.length,caret)===data&&this.editor.isAppend(this.previous,value,caret-data.length,caret-data.length);
-  const appendOnly=this.before?this.editor.isAppend(this.previous,value,this.before.start,this.before.end):inferredAppend;this.before=undefined;
-  if(history||!appendOnly)this.invalidate(history?'Undo/redo preserved. Type another Space to resume.':'Edit invalidated the previous correction.');
-  if(this.options.rolling&&(history||!appendOnly))this.draft.protect(value.length);
+  // Wait for final IME text, rather than interpreting each candidate replacement as a manual edit.
+  if(this.composing||event.isComposing){clearTimeout(this.pauseTimer);this.before=undefined;return;}
+  const change=inputChange(this.previous,value,this.before,{start:this.editor.selectionStart,end:this.editor.selectionEnd},history,(start,end)=>this.editor.isAppend(this.previous,value,start,end));this.before=undefined;
+  if(change==='unchanged')return;
+  clearTimeout(this.pauseTimer);
+  const appendOnly=change==='append'||change==='restart';
+  if(change==='restart'){this.invalidate('New draft started.');this.draft.protect(0);}
+  if(change==='history'||change==='edit')this.invalidate(history?'Undo/redo preserved. Type another Space to resume.':'Edit invalidated the previous correction.');
+  if(this.options.rolling&&(change==='history'||change==='edit'))this.draft.protect(value.length);
   this.previous=value;
   if(this.composing||event.isComposing||history)return;
   if(this.options.rolling&&!this.pending)this.options.status(this.options.automatic()?'New typing is unprocessed. Press Space or Cmd/Ctrl+Enter to decode.':'New typing is unprocessed. Press Cmd/Ctrl+Enter to decode.');

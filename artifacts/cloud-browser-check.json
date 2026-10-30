@@ -21,6 +21,8 @@
   "hostRejectedInsertionNotClaimedApplied": true,
   "disableClearsLastResult": true,
   "missingBeforeinputKeepsWholeFirstWord": true,
+  "initialPasteAndDuplicateEventsKeepFirstWordEligible": true,
+  "selectAllRetypingDoesNotProtectFirstWord": true,
   "popupMissingURLFallbackAndRestrictedPageMessage": true,
   "note": "The browser-to-loopback-to-provider path is exercised against an injected provider fixture. Actual API quality/latency and administrator-blocked extension installation remain unverified."
 }

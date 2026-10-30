@@ -1,6 +1,7 @@
 {
   "provider": "explicit fixture; no live OpenAI or live editor integration measured",
   "paragraphEditorSpaceRollingUndoRedo": true,
+  "richSelectAllStartsFreshDraft": true,
   "mixedFormattingLinksAndSingleUndo": true,
   "continuedTypingCaretAndFormatting": true,
   "paragraphBoundariesPreserved": true,
