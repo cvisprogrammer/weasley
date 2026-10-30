@@ -1,5 +1,5 @@
 import {segmentAt,sentenceStart,planReplacement,type DecodeResult,type Segment,type Selection} from './decoding';
-export interface FlowResult {segment:Segment;result:DecodeResult;applied:boolean;reason:string;elapsedMs:number;}
+export interface FlowResult {segment:Segment;result:DecodeResult;applied:boolean;unchanged:boolean;reason:string;elapsedMs:number;}
 export interface FlowOptions {ready:()=>boolean;automatic:()=>boolean;delay:()=>number;decode:(text:string,context:string)=>Promise<DecodeResult>;cancel:()=>void;status:(text:string)=>void;result:(result:FlowResult)=>void;changed?:()=>void;}
 // One in-flight operation plus one latest boundary. Editing remains entirely native to the textarea.
 export class BriiFlow {
@@ -40,12 +40,12 @@ export class BriiFlow {
   let segment:Segment|undefined;try{segment=segmentAt(this.editor.value,queued.boundary,this.frontier,queued.manual);}catch(e){this.options.status(String(e));return;}if(!segment)return;
   const started=queued.at;this.pending=true;this.options.status('Decoding locally… keep typing.');
   void this.options.decode(segment.raw,segment.context).then(result=>{
-   let applied=false,reason=result.validationError?'Correction not applied: '+result.validationError:'Result discarded after an edit, selection change, blur, or composition.';
+   let applied=false,unchanged=false,reason=result.validationError?'Correction not applied: '+result.validationError:'Result discarded after an edit, selection change, blur, or composition.';
    if(!result.validationError&&queued.epoch===this.epoch&&!this.composing&&document.activeElement===this.editor){
     const selection:Selection={start:this.editor.selectionStart,end:this.editor.selectionEnd,direction:this.editor.selectionDirection};
     const plan=planReplacement(segment!,result.corrected,this.editor.value,selection);
     if(plan){
-     if(segment!.raw===result.corrected){applied=true;reason='No text change needed.';}
+     if(segment!.raw===result.corrected){unchanged=true;reason='The model returned the text unchanged. It may not have decoded it; the next completed words will be included in another attempt.';}
      else{
       const scrollTop=this.editor.scrollTop,scrollLeft=this.editor.scrollLeft;this.applying=true;
       try{
@@ -59,7 +59,7 @@ export class BriiFlow {
      if(applied){this.frontier=plan.start+plan.text.length;if(this.queued&&this.queued.boundary>=plan.end)this.queued.boundary+=plan.delta;}
     }
    }
-   this.options.result({segment:segment!,result,applied,reason,elapsedMs:performance.now()-started});this.options.status(reason);
+   this.options.result({segment:segment!,result,applied,unchanged,reason,elapsedMs:performance.now()-started});this.options.status(reason);
   }).catch(e=>this.options.status('Correction failed; original text preserved. '+String(e))).finally(()=>{this.pending=false;this.drain();this.options.changed?.();});
  }
 }

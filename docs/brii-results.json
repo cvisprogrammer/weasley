@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-30T03:56:43.418Z",
+  "at": "2026-10-30T04:11:54.613Z",
   "environment": {
     "os": "Linux",
     "browser": "Chromium 154.0.8037.57",
@@ -47,14 +47,7 @@
       "undoInvalidatesPendingResponse": true,
       "longChunksNotClippedOrApplied": true,
       "benchmarkExportAndExplicitSemanticReview": true,
-      "invalidReplyRejectedButTimingVisible": true,
-      "webgpu": {
-        "available": false,
-        "shaderF16": false
-      },
-      "realModelProbe": "Error: No WebGPU adapter is available. Use a WebGPU-enabled Chrome; no inference benchmark can run here.",
-      "realInferenceMeasured": false,
-      "note": "All editing, fixture benchmark timings and fixture CER/WER are mocked transport checks, not model performance or quality. realModelProbe uses the production backend without the mock."
+      "invalidReplyRejectedButTimingVisible": true
     },
     "legacyTypingBrowserChecks": "passed with known administrator-policy/WebGPU blockers explicitly reported",
     "legacyMailBrowserChecks": "passed against explicit fixtures"
@@ -66,5 +59,6 @@
     "normalization": "Remove one complete empty leading block only; preserve raw response and reject actual reasoning, incomplete tags or truncation.",
     "regressionInput": "oksletsrythsiandseeifitatualdworks itshsouldbeatielfaster",
     "actualGpuReproduction": false
-  }
+  },
+  "unchangedHandling": "Exact echo is not certified correct and is reconsidered with later completed words. Baseline prompt/model/output budget unchanged; no structured mode or cloud calls added."
 }
