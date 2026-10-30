@@ -1,19 +1,60 @@
 # Brii Flow
 
-The current experiment decodes severely mistyped text using the existing local WebLLM worker. Space completes a chunk; inference runs without blocking typing, and native Undo reverses corrections. No cloud API, account or API key is needed.
+Brii reconstructs sloppy typing using the original cloud decoder prompt and **gpt-4.1-mini**. The default Chrome extension now uses a small loopback helper; the API key stays in that helper, outside Chrome. Cloud correction is off until you enable it and allow a website.
+
+## Run from source
+
+Requires Node 22+ and Chrome.
 
 ```sh
 npm ci
-npm run brii
+npm run build
+export OPENAI_API_KEY='your-key'
+npm run cloud
 ```
 
-Open `http://127.0.0.1:4173/` in WebGPU-enabled Chrome. Load the default **Qwen3.5-2B**, type sloppy text, and press Space. Toggle automatic correction or use **Cmd/Ctrl+Enter**. Use **Run benchmark → Export JSON** for the supplied examples; review semantic-change counts manually. `public/brii-dataset.json` is editable. The already-supported 0.8B model is an explicit optional speed comparison; the baseline was not changed.
+Enter your key in your own terminal; do not send it in chat. Open `chrome://extensions`, enable Developer mode, and Load unpacked → select `dist`. Disable the old Weasley extension to avoid overlapping editing. The Brii build has a stable new extension identity.
 
-[Full Brii guide, editing contract, benchmark definitions and measured limitations](docs/BRII.md).
+Open the Brii popup, enable cloud correction, and click **Allow this website** on a page you want to use. **Try Brii** opens the playground. Alternatively open `http://127.0.0.1:3001/` to try the same decoder without installing the extension. Keep the helper running. Set `OPENAI_MODEL` before starting it to override the default model.
 
-This cloud machine has no WebGPU adapter, so real inference latency and quality are unmeasured. Type/build/unit tests and browser editing checks with explicit inference fixtures pass; fixture times are not model performance. First-use model downloads still require network access, and a standalone origin has a separate cache from the previous extension.
+## Use the downloadable ZIP
 
-The legacy Chrome extension/Gmail prototype below remains available; Brii is standalone-first and does not require installing that extension. Existing worker/model infrastructure is preserved.
+Extract `artifacts/brii-flow-0.5.0.zip`. In a terminal inside the extracted folder:
+
+```sh
+export OPENAI_API_KEY='your-key'
+node cloud-server.mjs
+```
+
+Load that same extracted folder with Chrome's **Load unpacked**. No npm install or build is needed for the ZIP. The extension alone cannot call OpenAI without the running helper.
+
+## Editing and privacy
+
+Space triggers correction after a short configurable delay; Cmd/Ctrl+Enter corrects manually. One pending request coalesces later Spaces, typing continues, edits invalidate stale results, and ordinary Undo reverses a correction. Only completed text behind the cursor is corrected. The popup can disable automatic correction or remove allowed sites.
+
+**Supported: ordinary text inputs and textareas. Rich `contenteditable` editors, ChatGPT's composer, Google Docs, and Gmail composing are not supported yet.** They need editor-specific integration to preserve formatting and undo. Password and sensitive fields are excluded.
+
+On allowed sites, completed text (up to 600 characters) and up to 400 preceding characters from the same field go to OpenAI through the loopback helper. There is no webpage harvesting. Cloud corrections may incur API charges. Requests use `store:false`; that does not imply zero provider retention. No API key or text is persistently saved by Brii. Disabling cloud correction stops new requests and aborts pending requests where possible; it cannot retract text already sent.
+
+The helper binds only to 127.0.0.1, checks the extension's public identity, validates Host/Origin, and never accepts a caller-supplied upstream URL. These checks protect against ordinary website requests, not other programs running on your computer.
+
+## Verification and limitations
+
+```sh
+npm run typecheck
+npm test
+npm run build
+npm run test:cloud-browser
+npm run package
+```
+
+The cloud tests use an explicit fake provider. Browser checks cover opt-in, website gating, native Undo, continued typing, caret preservation, and excluded fields. No OpenAI key is configured in the cloud workspace, so live decoding quality and actual cloud latency are **unmeasured**. The UI reports end-to-end latency; this non-streaming path does not measure first-token latency. Unpacked extension installation is blocked by the workspace's Chromium administrator policy; the real content bundle is browser-tested with simulated Chrome transport.
+
+## Preserved local experiment
+
+`npm run brii` still opens the standalone WebLLM experiment at `http://127.0.0.1:4173/`. It retains Qwen3.5-2B, the optional 0.8B comparison, editable `public/brii-dataset.json`, and benchmark exports. It is separate from the default cloud extension. This workspace has no WebGPU adapter, so real local inference performance remains unmeasured. See [local experiment guide](docs/BRII.md).
+
+The previous Gmail extension sources remain for research; `public/legacy-manifest.json` preserves the old manifest. The default package no longer exposes that product or requests Gmail access. The historical documentation below describes that older build.
 
 ---
 

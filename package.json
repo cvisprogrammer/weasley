@@ -1,6 +1,6 @@
 {
   "name": "weasley",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,9 @@
     "package": "npm run build && node scripts/package.mjs",
     "test:mail-browser": "node scripts/mail-browser-check.mjs",
     "brii": "npm run build && npm run serve",
-    "test:brii-browser": "node scripts/brii-browser-check.mjs"
+    "test:brii-browser": "node scripts/brii-browser-check.mjs",
+    "cloud": "node scripts/cloud-server.mjs",
+    "test:cloud-browser": "node scripts/cloud-browser-check.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "0.2.86",

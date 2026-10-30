@@ -1,32 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Weasley \u2014 Local reply inbox",
-  "version": "0.4.0",
+  "name": "Brii Flow",
+  "version": "0.5.0",
   "minimum_chrome_version": "120",
-  "description": "Find email requests that need your reply using a local model. Read-only Gmail access; no cloud inference.",
+  "description": "Decode completed text with GPT-4.1-mini through your local bridge. Cloud processing is opt-in.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAipzJTxovUEECjqZkjrKv0qJopHvYhj16BAI+8q9ewYxfhCUGJxr5dcQoCYK6snjkelF5+ag9jn/E4XjBEqdK8uzrUnnDLe/OdrNWr/G+DS4x5WlO5EJkx1ZTiF6hg5ulzRyBHz89Jzbud1OPIzS4bbNUMAzuEyvgr0CM7NcGOkX4pyxUuyIFnpjdoNXbZZZXfSbtibTVdSTq3cIqPq4LsdkaSTFQ6qieaggzTqx0umxToHrYw+01WVBK8v/7XxOAUXKwFt/nWUrc9bWL54QnZ7UmfizV4jdfYSH5fFi2M3Tr7uVVpbCYpMzJTRGrFmsQL7J2gF6blze96/Hw9FRPfwIDAQAB",
   "permissions": [
     "storage",
-    "offscreen",
     "scripting",
-    "identity"
+    "activeTab"
   ],
   "host_permissions": [
-    "https://huggingface.co/*",
-    "https://*.huggingface.co/*",
-    "https://*.hf.co/*"
+    "http://127.0.0.1/*"
   ],
   "optional_host_permissions": [
-    "http://*/*",
-    "https://*/*"
+    "https://*/*",
+    "http://*/*"
   ],
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "flow-background.js",
     "type": "module"
   },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "flow-popup.html"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://gmail.googleapis.com https://oauth2.googleapis.com; worker-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' http://127.0.0.1:3001;"
   }
 }

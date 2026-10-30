@@ -1,0 +1,13 @@
+{
+  "upstream": "explicit fixture, no live OpenAI request",
+  "cloudOffByDefault": true,
+  "realBridgeAndNativeUndo": true,
+  "disabledStopsRequests": true,
+  "disallowedWebsiteNeverSends": true,
+  "allowedTextareaCorrects": true,
+  "passwordAndUnsupportedRichTextExcluded": true,
+  "disableAppliesToExistingControllers": true,
+  "syntheticTypingCannotSpend": true,
+  "continuedTypingAndCaretPreserved": true,
+  "note": "The browser-to-loopback-to-provider path is exercised against an injected provider fixture. Actual API quality/latency and administrator-blocked extension installation remain unverified."
+}

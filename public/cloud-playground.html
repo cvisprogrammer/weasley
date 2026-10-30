@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brii Flow · cloud</title><link rel="stylesheet" href="style.css"><body class="cloud-playground"><h1>Brii Flow <small>Simple cloud decoder</small></h1>
+<p>This uses OpenAI through your local bridge. Completed text and preceding context leave your machine when you enable correction. Your API key remains in the bridge.</p>
+<output id="bridgeStatus" aria-live="polite">Checking bridge…</output>
+<label><input type="checkbox" id="consent"> Enable cloud correction for this test</label><label><input type="checkbox" id="auto" checked> Correct after Space</label>
+<textarea id="editor" aria-label="Your text" rows="8" spellcheck="false" autocomplete="off" autocorrect="off" placeholder="Type freely, then press Space…"></textarea>
+<button id="correct" disabled>Correct · Cmd/Ctrl+Enter</button><p id="status" role="status">Enable cloud correction before sending text.</p><p>Keep typing while a correction is pending. Undo reverses changes. No local-model loading, prompt selectors or trial controls.</p>
+<script type="module" src="cloud-playground.js"></script></body></html>

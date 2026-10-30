@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Brii Flow</title><link rel="stylesheet" href="style.css"><body>
+<h1>Brii Flow <small>GPT-4.1-mini · cloud decoder</small></h1>
+<p>Completed text and up to 400 preceding characters are sent to OpenAI when correction is enabled. Your API key stays in your local bridge. API usage costs apply.</p>
+<label><input id="enabled" type="checkbox"> Enable cloud corrections</label>
+<label><input id="automatic" type="checkbox"> Correct after Space</label>
+<button id="allow">Allow this website</button> <button id="try">Try Brii</button>
+<output id="status" role="status">Checking local bridge…</output>
+<details><summary>Allowed websites</summary><ul id="sites"></ul></details>
+<details><summary>Start the bridge / timing</summary><p>In your repository terminal, set OPENAI_API_KEY, then run:</p><pre>npm run cloud</pre><p>For the prebuilt ZIP, run <code>node cloud-server.mjs</code> in the extracted folder. Node.js 22+ is required.</p><p>Never paste your API key here or into chat. The bridge listens only on 127.0.0.1:3001.</p><label>Space debounce (ms)<input id="delay" type="number" min="0" max="1000" step="10"></label></details>
+<p>Cmd/Ctrl+Enter corrects manually. Ordinary Undo restores the raw text. Supports ordinary text inputs and textareas; rich-text editors are not supported yet. Reload an allowed page after an extension update.</p>
+<script type="module" src="flow-popup.js"></script></body></html>
