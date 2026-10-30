@@ -24,7 +24,7 @@ for(const m of records) {
 }
 await writeFile('dist/model-integrity.json',JSON.stringify(hashes,null,2));
 await writeFile('dist/registry.json',JSON.stringify(records,null,2));
-for(const name of ['background','offscreen','worker','popup','benchmark','mail']) await build({entryPoints:[`src/${name}.ts`],outfile:`dist/${name}.js`,bundle:true,format:'esm',target:'chrome120'});
+for(const name of ['background','offscreen','worker','popup','benchmark','mail','brii']) await build({entryPoints:[`src/${name}.ts`],outfile:`dist/${name}.js`,bundle:true,format:'esm',target:'chrome120'});
 await build({entryPoints:['src/content.ts'],outfile:'dist/content.js',bundle:true,format:'iife',target:'chrome120'});
 
 await build({entryPoints:['src/gmail-badges.ts'],outfile:'dist/gmail-badges.js',bundle:true,format:'iife',target:'chrome120'});

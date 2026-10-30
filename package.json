@@ -10,7 +10,9 @@
     "serve": "node scripts/serve.mjs",
     "test:browser": "node scripts/browser-check.mjs",
     "package": "npm run build && node scripts/package.mjs",
-    "test:mail-browser": "node scripts/mail-browser-check.mjs"
+    "test:mail-browser": "node scripts/mail-browser-check.mjs",
+    "brii": "npm run build && npm run serve",
+    "test:brii-browser": "node scripts/brii-browser-check.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "0.2.86",

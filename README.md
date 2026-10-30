@@ -1,3 +1,22 @@
+# Brii Flow
+
+The current experiment decodes severely mistyped text using the existing local WebLLM worker. Space completes a chunk; inference runs without blocking typing, and native Undo reverses corrections. No cloud API, account or API key is needed.
+
+```sh
+npm ci
+npm run brii
+```
+
+Open `http://127.0.0.1:4173/` in WebGPU-enabled Chrome. Load the default **Qwen3.5-2B**, type sloppy text, and press Space. Toggle automatic correction or use **Cmd/Ctrl+Enter**. Use **Run benchmark → Export JSON** for the supplied examples; review semantic-change counts manually. `public/brii-dataset.json` is editable. The already-supported 0.8B model is an explicit optional speed comparison; the baseline was not changed.
+
+[Full Brii guide, editing contract, benchmark definitions and measured limitations](docs/BRII.md).
+
+This cloud machine has no WebGPU adapter, so real inference latency and quality are unmeasured. Type/build/unit tests and browser editing checks with explicit inference fixtures pass; fixture times are not model performance. First-use model downloads still require network access, and a standalone origin has a separate cache from the previous extension.
+
+The legacy Chrome extension/Gmail prototype below remains available; Brii is standalone-first and does not require installing that extension. Existing worker/model infrastructure is preserved.
+
+---
+
 # Weasley — Needs your reply
 
 A local-model Gmail assistant that flags unresolved email requests with supporting quotes. It keeps Google's **Important** marker intact and adds a separate **↩ Reply** indicator beside supported Gmail inbox subjects. No developer backend, cloud inference, email sending, or Gmail label changes.

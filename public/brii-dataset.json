@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "cases": [
+    {"id":"spell-correction","input":"isnthataspelecoreciont","expected":"Isn't that spell correction?"},
+    {"id":"speed-of-thought","input":"cnawegettothe piotnwhere ucnawrieteat thespeeoft houg","expected":"Can we get to the point where you can write at the speed of thought?"},
+    {"id":"interface","input":"eyahtheinterfaisthethrickpart","expected":"Yeah, the interface is the tricky part."},
+    {"id":"exact-decoding","input":"nahbutyeodnea pretygoodjobof justdecowexactlwhat ivewrite","expected":"Nah, but you've done a pretty good job of just decoding exactly what I've written."},
+    {"id":"frog-ate-prince","input":"oneupa timetheer aw a frotg that ate a prince","expected":"Once upon a time there was a frog that ate a prince"},
+    {"id":"space-example","input":"eymahbeafeteraspscewerecosntructhtelastesentene","expected":"Yeah, maybe after a space we reconstruct the last sentence."}
+  ]
+}

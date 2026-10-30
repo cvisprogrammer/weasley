@@ -1,0 +1,63 @@
+{
+  "at": "2026-10-30T03:43:52.548Z",
+  "environment": {
+    "os": "Linux",
+    "browser": "Chromium 154.0.8037.57",
+    "node": "v24.19.0",
+    "webgpu": {
+      "available": false,
+      "shaderF16": false
+    }
+  },
+  "model": "Qwen3.5-2B-q4f16_1-MLC",
+  "webllm": "0.2.86",
+  "modelChanged": false,
+  "comparisonCandidate": {
+    "model": "Qwen3.5-0.8B-q4f16_1-MLC",
+    "reason": "Already supported, explicitly selectable smaller speed/quality comparator.",
+    "measured": false
+  },
+  "actualInference": {
+    "initialized": false,
+    "samples": 0,
+    "ttftMs": null,
+    "totalInferenceMs": null,
+    "cer": null,
+    "wer": null,
+    "unintendedSemanticChanges": null,
+    "status": "blocked",
+    "reason": "Error: No WebGPU adapter is available. Use a WebGPU-enabled Chrome; no inference benchmark can run here.",
+    "targetsMet": null
+  },
+  "validation": {
+    "strictTypecheck": "passed",
+    "build": "passed",
+    "unitTestsPassed": 24,
+    "briiBrowserChecks": {
+      "editingUsesMockInference": true,
+      "nativeUndoRedo": true,
+      "tailCaretAndUndoGrouping": true,
+      "suffixSelectionPreserved": true,
+      "stalePrefixNeverOverwritten": true,
+      "overlappingSelectionNotTouched": true,
+      "spacesCoalescedNoConcurrentInference": true,
+      "unfinishedWordPreserved": true,
+      "imeAndWhitespacePreserved": true,
+      "manualShortcutAndAutoToggle": true,
+      "undoInvalidatesPendingResponse": true,
+      "longChunksNotClippedOrApplied": true,
+      "benchmarkExportAndExplicitSemanticReview": true,
+      "invalidReplyRejectedButTimingVisible": true,
+      "webgpu": {
+        "available": false,
+        "shaderF16": false
+      },
+      "realModelProbe": "Error: No WebGPU adapter is available. Use a WebGPU-enabled Chrome; no inference benchmark can run here.",
+      "realInferenceMeasured": false,
+      "note": "All editing, fixture benchmark timings and fixture CER/WER are mocked transport checks, not model performance or quality. realModelProbe uses the production backend without the mock."
+    },
+    "legacyTypingBrowserChecks": "passed with known administrator-policy/WebGPU blockers explicitly reported",
+    "legacyMailBrowserChecks": "passed against explicit fixtures"
+  },
+  "note": "No synthetic fixture latency/error rate is presented as real model performance. Run the playground benchmark on the target GPU and manually review semantic changes."
+}
