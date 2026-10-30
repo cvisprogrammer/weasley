@@ -1,0 +1,12 @@
+{
+  "provider": "explicit fixture; no live OpenAI or live editor integration measured",
+  "paragraphEditorSpaceRollingUndoRedo": true,
+  "mixedFormattingLinksAndSingleUndo": true,
+  "continuedTypingCaretAndFormatting": true,
+  "paragraphBoundariesPreserved": true,
+  "automaticCorrectionInsideMiddleParagraph": true,
+  "lineBreaksPreserved": true,
+  "overlappingSelectionNeverOverwritten": true,
+  "embeddedObjectsNotSentOrReplaced": true,
+  "privateRichEditorExcluded": true
+}

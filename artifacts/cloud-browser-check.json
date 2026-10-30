@@ -6,7 +6,7 @@
   "disallowedWebsiteNeverSends": true,
   "supportedFieldShowsReadyIndicator": true,
   "allowedTextareaCorrects": true,
-  "passwordAndUnsupportedRichTextExcluded": true,
+  "passwordAndPrivateRichTextExcluded": true,
   "disableAppliesToExistingControllers": true,
   "syntheticTypingCannotSpend": true,
   "continuedTypingAndCaretPreserved": true,

@@ -14,8 +14,16 @@ export function nextWord(text: string) { return text.match(/^\s*\S+\s*/)?.[0] ||
 export function safeField(el: Element | null): el is HTMLInputElement | HTMLTextAreaElement {
   if (!(el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement)) return false;
   if (el instanceof HTMLInputElement && !['text', 'search'].includes(el.type)) return false;
-  return !el.disabled && !el.readOnly && !el.closest('[data-private]') &&
-    !/password|one-time|cc-|username|email|tel|address|name|birth|transaction|ssn|social.?security|credit.?card|card.?number|cvv|bank|routing|api.?key|secret|token|otp/i.test(el.autocomplete + ' ' + el.getAttribute('name') + ' ' + el.id + ' ' + el.getAttribute('aria-label'));
+  return !el.disabled && !el.readOnly && safeEditorMetadata(el);
+}
+export function safeEditorMetadata(el:Element){
+ return !el.closest('[data-private], [aria-readonly="true"], [aria-disabled="true"]') &&
+  !/password|one-time|cc-|username|email|tel|address|name|birth|transaction|ssn|social.?security|credit.?card|card.?number|cvv|bank|routing|api.?key|secret|token|otp/i.test(['autocomplete','name','id','aria-label'].map(a=>el.getAttribute(a)||'').join(' '));
+}
+export function richHost(el:Element|null):HTMLElement|undefined {
+ if(!(el instanceof HTMLElement)||!el.isContentEditable)return;
+ let host=el;while(host.parentElement?.isContentEditable)host=host.parentElement;
+ return safeEditorMetadata(host)?host:undefined;
 }
 
 // Chrome host permissions cover a hostname; runtime consent still matches the exact origin/port.

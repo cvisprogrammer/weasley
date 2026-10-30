@@ -32,7 +32,9 @@ Load that same extracted folder with Chrome's **Load unpacked**. No npm install 
 
 Space triggers correction after a short configurable delay; Cmd/Ctrl+Enter corrects manually. One pending request coalesces later Spaces, typing continues, edits invalidate stale results, and ordinary Undo reverses a correction. The cloud path revisits up to 12 recent words in the current sentence, retaining the original keystrokes in memory so later context can overturn an earlier guess. After a 650 ms pause it makes one whole-current-sentence pass over completed text (including a final word ending in sentence punctuation). Earlier sentences stay fixed. Manual edits and Undo protect all existing text from automatic correction; new appended text remains eligible. Manual correction explicitly revisits the current sentence. Whole-sentence passes retain the 600-character limit. Revisiting text can increase API use; no calibrated confidence score is claimed. The popup can disable automatic correction or remove allowed sites.
 
-**Supported: ordinary text inputs and textareas. Rich `contenteditable` editors, ChatGPT's composer, Google Docs, and Gmail composing are not supported yet.** They need editor-specific integration to preserve formatting and undo. Password and sensitive fields are excluded. Allowed same-origin result frames, including inherited-origin about:blank/srcdoc frames, are supported; a separately hosted frame requires its own origin to be allowed. A Brii status indicator appears when you focus a supported field. A missing indicator means attachment has not been confirmed.
+**Supported: ordinary text inputs/textareas and experimental standard HTML `contenteditable` editors.** The rich-text adapter maps paragraph/caret positions to text and applies one native undoable edit. It preserves supported inline formatting (bold, italic, underline, color and links), paragraph boundaries, and continued typing. It skips ranges containing embedded objects, protected content, unsupported markup, or line breaks, rather than flattening them. Model output is inserted as literal text, never interpreted as model-supplied HTML. Pasted multiline corrections are rejected in rich-text mode.
+
+Paragraph-style composers are browser-tested with fixtures; live ChatGPT, Gmail, Wikipedia visual editing, and other framework-managed editors are **not verified** here and can reject external edits. **Google Docs' canvas editor remains unsupported.** Password and sensitive fields are excluded. Allowed same-origin result frames, including inherited-origin about:blank/srcdoc frames, are supported; a separately hosted frame requires its own origin to be allowed. A Brii status indicator appears when you focus a supported field. A missing indicator means attachment has not been confirmed.
 
 On allowed sites, completed text (up to 600 characters) and up to 400 preceding characters from the same field go to OpenAI through the loopback helper. There is no webpage harvesting. Cloud corrections may incur API charges. Requests use `store:false`; that does not imply zero provider retention. No API key or text is persistently saved by Brii. Disabling cloud correction stops new requests and aborts pending requests where possible; it cannot retract text already sent.
 
@@ -45,10 +47,11 @@ npm run typecheck
 npm test
 npm run build
 npm run test:cloud-browser
+npm run test:rich-browser
 npm run package
 ```
 
-The cloud tests use an explicit fake provider. Browser checks cover opt-in, website gating, native Undo, continued typing, caret preservation, and excluded fields. No OpenAI key is configured in the cloud workspace, so live decoding quality and actual cloud latency are **unmeasured**. The UI reports end-to-end latency; this non-streaming path does not measure first-token latency. Unpacked extension installation is blocked by the workspace's Chromium administrator policy; the real content bundle is browser-tested with simulated Chrome transport.
+The cloud tests use an explicit fake provider. Browser checks cover opt-in, website gating, native Undo, continued typing, caret preservation, and excluded fields. Rich-editor checks additionally cover formatting/links, paragraphs and line breaks, mid-document typing, caret and selection mapping, Undo/Redo, stale results, and embedded objects. No OpenAI key is configured in the cloud workspace, so live decoding quality and actual cloud latency are **unmeasured**. The UI reports end-to-end latency; this non-streaming path does not measure first-token latency. Unpacked extension installation is blocked by the workspace's Chromium administrator policy; the real content bundle is browser-tested with simulated Chrome transport.
 
 ## Preserved local experiment
 

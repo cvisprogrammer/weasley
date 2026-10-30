@@ -1,18 +1,21 @@
+import {PlainEditor,type EditorSurface} from './editor';
 import {RollingDraft} from './rolling';
 import {segmentAt,sentenceStart,planReplacement,type DecodeResult,type Segment,type Selection} from './decoding';
 export interface FlowResult {segment:Segment;result:DecodeResult;applied:boolean;unchanged:boolean;reason:string;elapsedMs:number;}
 export interface FlowOptions {rolling?:boolean;active?:()=>boolean;trustedOnly?:boolean;decodingStatus?:string;ready:()=>boolean;automatic:()=>boolean;delay:()=>number;decode:(text:string,context:string)=>Promise<DecodeResult>;cancel:()=>void;status:(text:string)=>void;result:(result:FlowResult)=>void;changed?:()=>void;}
-// One in-flight operation plus one latest boundary. Editing remains entirely native to the textarea.
+// One in-flight operation plus one latest boundary. Editing uses the browser’s native undo history.
 export class BriiFlow {
  private draft=new RollingDraft();private pauseTimer?:ReturnType<typeof setTimeout>;private epoch=0;private frontier=0;private pending=false;private applying=false;private composing=false;private previous:string;private before?:{start:number;end:number};
  private queued?:{boundary:number;manual:boolean;wholeSentence:boolean;epoch:number;due:number;at:number};private timer?:ReturnType<typeof setTimeout>;
- constructor(private editor:HTMLTextAreaElement,private options:FlowOptions){
-  this.previous=editor.value;
-  editor.addEventListener('beforeinput',()=>{if(!this.applying&&this.active())this.before={start:editor.selectionStart,end:editor.selectionEnd};});
-  editor.addEventListener('input',e=>this.input(e as InputEvent));
-  editor.addEventListener('compositionstart',()=>{this.composing=true;if(this.active())this.invalidate('IME composition: correction paused.');});
-  editor.addEventListener('compositionend',()=>{this.composing=false;if(this.active())this.previous=editor.value;});
-  editor.addEventListener('keydown',e=>{if(this.active()&&(!this.options.trustedOnly||e.isTrusted)&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!e.isComposing){e.preventDefault();this.manual();}});
+ private editor:EditorSurface;
+ constructor(editor:HTMLTextAreaElement|HTMLInputElement|EditorSurface,private options:FlowOptions){
+  this.editor=editor instanceof HTMLTextAreaElement||editor instanceof HTMLInputElement?new PlainEditor(editor):editor;
+  this.previous=this.editor.value;
+  this.editor.addEventListener('beforeinput',()=>{if(!this.applying&&this.active())this.before={start:this.editor.selectionStart,end:this.editor.selectionEnd};});
+  this.editor.addEventListener('input',e=>this.input(e as InputEvent));
+  this.editor.addEventListener('compositionstart',()=>{this.composing=true;if(this.active())this.invalidate('IME composition: correction paused.');});
+  this.editor.addEventListener('compositionend',()=>{this.composing=false;if(this.active())this.previous=this.editor.value;});
+  this.editor.addEventListener('keydown',e=>{if(this.active()&&(!this.options.trustedOnly||e.isTrusted)&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!e.isComposing){e.preventDefault();this.manual();}});
  }
  private active(){return this.options.active?.()??true;}
  get isBusy(){return this.pending;}
@@ -24,7 +27,7 @@ export class BriiFlow {
   if(this.applying||!this.active()||(this.options.trustedOnly&&!event.isTrusted))return;const value=this.editor.value;
   clearTimeout(this.pauseTimer);
   const history=event.inputType==='historyUndo'||event.inputType==='historyRedo';
-  const appendOnly=this.before?.start===this.previous.length&&this.before?.end===this.previous.length&&value.startsWith(this.previous);this.before=undefined;
+  const appendOnly=!!this.before&&this.editor.isAppend(this.previous,value,this.before.start,this.before.end);this.before=undefined;
   if(history||!appendOnly)this.invalidate(history?'Undo/redo preserved. Type another Space to resume.':'Edit invalidated the previous correction.');
   if(this.options.rolling&&(history||!appendOnly))this.draft.protect(value.length);
   this.previous=value;
@@ -32,7 +35,7 @@ export class BriiFlow {
   if(this.options.automatic()&&event.inputType==='insertText'&&event.data===' '&&this.editor.selectionStart===this.editor.selectionEnd)this.enqueue(this.editor.selectionStart,false);
   if(this.options.rolling&&this.options.automatic()&&event.inputType==='insertText'&&appendOnly){
    const epoch=this.epoch;
-   this.pauseTimer=setTimeout(()=>{if(epoch!==this.epoch||!this.active()||!this.options.automatic()||this.editor.selectionStart!==this.editor.value.length||this.editor.selectionEnd!==this.editor.value.length)return;const boundary=this.editor.value.length,prefix=this.editor.value;const completed=/[.!?]$/.test(prefix)?boundary:prefix.search(/\S*$/);if(completed>0)this.enqueue(completed,false,true);},650);
+   this.pauseTimer=setTimeout(()=>{if(epoch!==this.epoch||!this.active()||!this.options.automatic()||!this.editor.atBoundary(this.editor.selectionStart)||this.editor.selectionEnd!==this.editor.selectionStart)return;const boundary=this.editor.selectionStart,prefix=this.editor.value.slice(0,boundary);const completed=/[.!?]$/.test(prefix)?boundary:prefix.search(/\S*$/);if(completed>0)this.enqueue(completed,false,true);},650);
   }
  }
  private enqueue(boundary:number,manual:boolean,wholeSentence=false){
@@ -44,12 +47,12 @@ export class BriiFlow {
   clearTimeout(this.timer);if(this.pending||!this.queued||this.composing)return;
   const wait=this.queued.due-performance.now();if(wait>0){this.timer=setTimeout(()=>this.drain(),wait);return;}
   const queued=this.queued;this.queued=undefined;
-  if(!this.options.ready()||queued.epoch!==this.epoch||(!queued.manual&&!this.options.automatic())||document.activeElement!==this.editor||this.editor.selectionStart<queued.boundary){this.options.status('Queued correction skipped after focus, selection, model, or mode changed.');return;}
-  let segment:Segment|undefined;try{segment=this.options.rolling?this.draft.segment(this.editor.value,queued.boundary,queued.wholeSentence||queued.manual,queued.manual):segmentAt(this.editor.value,queued.boundary,this.frontier,queued.manual);}catch(e){this.options.status(String(e));return;}if(!segment)return;
+  if(!this.options.ready()||queued.epoch!==this.epoch||(!queued.manual&&!this.options.automatic())||!this.editor.isFocused()||this.editor.selectionStart<queued.boundary){this.options.status('Queued correction skipped after focus, selection, model, or mode changed.');return;}
+  let segment:Segment|undefined;try{segment=this.options.rolling?this.draft.segment(this.editor.value,queued.boundary,queued.wholeSentence||queued.manual,queued.manual):segmentAt(this.editor.value,queued.boundary,this.frontier,queued.manual);}catch(e){this.options.status(String(e));return;}if(!segment)return;if(!this.editor.canReplace(segment.start,segment.end)){this.options.status('This range contains unsupported formatting or embedded content; original text preserved.');return;}
   const started=queued.at;this.pending=true;this.options.status(this.options.decodingStatus||'Decoding locally… keep typing.');
   void this.options.decode(segment.raw,segment.context).then(result=>{
    let applied=false,unchanged=false,reason=result.validationError?'Correction not applied: '+result.validationError:'Result discarded after an edit, selection change, blur, or composition.';
-   if(this.active()&&!result.validationError&&queued.epoch===this.epoch&&!this.composing&&document.activeElement===this.editor){
+   if(this.active()&&!result.validationError&&queued.epoch===this.epoch&&!this.composing&&this.editor.isFocused()){
     const selection:Selection={start:this.editor.selectionStart,end:this.editor.selectionEnd,direction:this.editor.selectionDirection};
     const plan=planReplacement(segment!,result.corrected,this.editor.value,selection);
     if(plan){
@@ -58,8 +61,8 @@ export class BriiFlow {
       const scrollTop=this.editor.scrollTop,scrollLeft=this.editor.scrollLeft;this.applying=true;
       try{
        this.editor.setSelectionRange(plan.start,plan.end);
-       // A native replacement is one undoable edit; never fall back to .value/setRangeText.
-       applied=document.execCommand('insertText',false,plan.text);
+       // Adapters use native commands; never assign .value or rewrite the live DOM.
+       applied=this.editor.insertText(plan.text);
        if(applied){this.editor.setSelectionRange(plan.selection.start,plan.selection.end,plan.selection.direction);reason='Correction applied; ordinary Undo restores the raw text.';}
        else{this.editor.setSelectionRange(selection.start,selection.end,selection.direction);reason='Browser rejected native insertion; original text preserved.';}
       }finally{this.applying=false;this.previous=this.editor.value;this.editor.scrollTop=scrollTop;this.editor.scrollLeft=scrollLeft;}

@@ -14,7 +14,8 @@
     "brii": "npm run build && npm run serve",
     "test:brii-browser": "node scripts/brii-browser-check.mjs",
     "cloud": "node scripts/cloud-server.mjs",
-    "test:cloud-browser": "node scripts/cloud-browser-check.mjs"
+    "test:cloud-browser": "node scripts/cloud-browser-check.mjs",
+    "test:rich-browser": "node scripts/rich-browser-check.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "0.2.86",
