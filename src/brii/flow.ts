@@ -1,7 +1,7 @@
 import {PlainEditor,type EditorSurface} from './editor';
 import {RollingDraft} from './rolling';
 import {segmentAt,sentenceStart,planReplacement,type DecodeResult,type Segment,type Selection} from './decoding';
-export interface FlowResult {segment:Segment;result:DecodeResult;applied:boolean;unchanged:boolean;reason:string;elapsedMs:number;}
+export interface FlowResult {unprocessedTail?:boolean;segment:Segment;result:DecodeResult;applied:boolean;unchanged:boolean;reason:string;elapsedMs:number;}
 export interface FlowOptions {rolling?:boolean;active?:()=>boolean;trustedOnly?:boolean;decodingStatus?:string;ready:()=>boolean;automatic:()=>boolean;delay:()=>number;decode:(text:string,context:string)=>Promise<DecodeResult>;cancel:()=>void;status:(text:string)=>void;result:(result:FlowResult)=>void;changed?:()=>void;}
 // One in-flight operation plus one latest boundary. Editing uses the browser’s native undo history.
 export class BriiFlow {
@@ -32,6 +32,7 @@ export class BriiFlow {
   if(this.options.rolling&&(history||!appendOnly))this.draft.protect(value.length);
   this.previous=value;
   if(this.composing||event.isComposing||history)return;
+  if(this.options.rolling&&!this.pending)this.options.status(this.options.automatic()?'New typing is unprocessed. Press Space or Cmd/Ctrl+Enter to decode.':'New typing is unprocessed. Press Cmd/Ctrl+Enter to decode.');
   if(this.options.automatic()&&event.inputType==='insertText'&&event.data===' '&&this.editor.selectionStart===this.editor.selectionEnd)this.enqueue(this.editor.selectionStart,false);
   if(this.options.rolling&&this.options.automatic()&&event.inputType==='insertText'&&appendOnly){
    const epoch=this.epoch;
@@ -58,19 +59,23 @@ export class BriiFlow {
     if(plan){
      if(this.editor.value.slice(segment!.start,segment!.end)===result.corrected){unchanged=true;reason='The model returned the text unchanged. It may not have decoded it; the next completed words will be included in another attempt.';}
      else{
+      const beforeValue=this.editor.value,expectedValue=beforeValue.slice(0,plan.start)+plan.text+beforeValue.slice(plan.end);
       const scrollTop=this.editor.scrollTop,scrollLeft=this.editor.scrollLeft;this.applying=true;
       try{
        this.editor.setSelectionRange(plan.start,plan.end);
        // Adapters use native commands; never assign .value or rewrite the live DOM.
        applied=this.editor.insertText(plan.text);
-       if(applied){this.editor.setSelectionRange(plan.selection.start,plan.selection.end,plan.selection.direction);reason='Correction applied; ordinary Undo restores the raw text.';}
+       if(applied&&this.editor.value!==expectedValue){applied=false;this.invalidate('Host editor did not retain the requested text.');this.draft.protect(this.editor.value.length);reason='Host editor did not retain the requested text; suggestion not confirmed.';}
+       else if(applied){this.editor.setSelectionRange(plan.selection.start,plan.selection.end,plan.selection.direction);reason='Model suggestion applied; correctness is unverified. Undo restores the previous text.';}
        else{this.editor.setSelectionRange(selection.start,selection.end,selection.direction);reason='Browser rejected native insertion; original text preserved.';}
       }finally{this.applying=false;this.previous=this.editor.value;this.editor.scrollTop=scrollTop;this.editor.scrollLeft=scrollLeft;}
      }
      if(applied){if(this.options.rolling)this.draft.applied(segment!,plan.text);this.frontier=plan.start+plan.text.length;if(this.queued&&this.queued.boundary>=plan.end)this.queued.boundary+=plan.delta;}
     }
    }
-   this.options.result({segment:segment!,result,applied,unchanged,reason,elapsedMs:performance.now()-started});this.options.status(reason);
+   const completedEnd=segment!.start+(applied?result.corrected.length:segment!.end-segment!.start);
+   const unprocessedTail=(applied||unchanged)&&!!this.editor.value.slice(completedEnd,this.editor.selectionStart).trim();
+   this.options.status(reason);this.options.result({segment:segment!,result,applied,unchanged,reason,unprocessedTail,elapsedMs:performance.now()-started});
   }).catch(e=>this.options.status('Correction failed; original text preserved. '+String(e))).finally(()=>{this.pending=false;this.drain();this.options.changed?.();});
  }
 }

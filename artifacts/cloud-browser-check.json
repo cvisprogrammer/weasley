@@ -12,8 +12,14 @@
   "continuedTypingAndCaretPreserved": true,
   "inheritedOriginFrameCorrectsAndUndoes": true,
   "laterWordsRevisitOriginalKeystrokes": true,
+  "rawAndDisplayedComparisonCaptured": true,
   "pauseRevisitsSentenceOnce": true,
   "undoProtectsPreviousWords": true,
+  "echoNotClaimedCorrect": true,
+  "newTypingCannotKeepOldSuccessStatus": true,
+  "unprocessedTailNotClaimedChecked": true,
+  "hostRejectedInsertionNotClaimedApplied": true,
+  "disableClearsLastResult": true,
   "popupMissingURLFallbackAndRestrictedPageMessage": true,
   "note": "The browser-to-loopback-to-provider path is exercised against an injected provider fixture. Actual API quality/latency and administrator-blocked extension installation remain unverified."
 }
