@@ -30,7 +30,7 @@ Load that same extracted folder with Chrome's **Load unpacked**. No npm install 
 
 ## Editing and privacy
 
-Space triggers correction after a short configurable delay; Cmd/Ctrl+Enter corrects manually. One pending request coalesces later Spaces, typing continues, edits invalidate stale results, and ordinary Undo reverses a correction. Only completed text behind the cursor is corrected. The popup can disable automatic correction or remove allowed sites.
+Space triggers correction after a short configurable delay; Cmd/Ctrl+Enter corrects manually. One pending request coalesces later Spaces, typing continues, edits invalidate stale results, and ordinary Undo reverses a correction. The cloud path revisits up to 12 recent words in the current sentence, retaining the original keystrokes in memory so later context can overturn an earlier guess. After a 650 ms pause it makes one whole-current-sentence pass over completed text (including a final word ending in sentence punctuation). Earlier sentences stay fixed. Manual edits and Undo protect all existing text from automatic correction; new appended text remains eligible. Manual correction explicitly revisits the current sentence. Whole-sentence passes retain the 600-character limit. Revisiting text can increase API use; no calibrated confidence score is claimed. The popup can disable automatic correction or remove allowed sites.
 
 **Supported: ordinary text inputs and textareas. Rich `contenteditable` editors, ChatGPT's composer, Google Docs, and Gmail composing are not supported yet.** They need editor-specific integration to preserve formatting and undo. Password and sensitive fields are excluded.
 
