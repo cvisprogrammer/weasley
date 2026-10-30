@@ -40,7 +40,7 @@ export class BriiFlow {
   let segment:Segment|undefined;try{segment=segmentAt(this.editor.value,queued.boundary,this.frontier,queued.manual);}catch(e){this.options.status(String(e));return;}if(!segment)return;
   const started=queued.at;this.pending=true;this.options.status('Decoding locally… keep typing.');
   void this.options.decode(segment.raw,segment.context).then(result=>{
-   let applied=false,reason=result.validationError?'Decoder response rejected; original text preserved. '+result.validationError:'Result discarded after an edit, selection change, blur, or composition.';
+   let applied=false,reason=result.validationError?'Correction not applied: '+result.validationError:'Result discarded after an edit, selection change, blur, or composition.';
    if(!result.validationError&&queued.epoch===this.epoch&&!this.composing&&document.activeElement===this.editor){
     const selection:Selection={start:this.editor.selectionStart,end:this.editor.selectionEnd,direction:this.editor.selectionDirection};
     const plan=planReplacement(segment!,result.corrected,this.editor.value,selection);

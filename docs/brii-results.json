@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-30T03:43:52.548Z",
+  "at": "2026-10-30T03:56:43.418Z",
   "environment": {
     "os": "Linux",
     "browser": "Chromium 154.0.8037.57",
@@ -32,7 +32,7 @@
   "validation": {
     "strictTypecheck": "passed",
     "build": "passed",
-    "unitTestsPassed": 24,
+    "unitTestsPassed": 25,
     "briiBrowserChecks": {
       "editingUsesMockInference": true,
       "nativeUndoRedo": true,
@@ -59,5 +59,12 @@
     "legacyTypingBrowserChecks": "passed with known administrator-policy/WebGPU blockers explicitly reported",
     "legacyMailBrowserChecks": "passed against explicit fixtures"
   },
-  "note": "No synthetic fixture latency/error rate is presented as real model performance. Run the playground benchmark on the target GPU and manually review semantic changes."
+  "note": "No synthetic fixture latency/error rate is presented as real model performance. Run the playground benchmark on the target GPU and manually review semantic changes.",
+  "compatibilityFix": {
+    "webllm": "0.2.86",
+    "cause": "Non-thinking prefill inserts a synthetic empty thinking block into outputIds; the prior validator rejected it.",
+    "normalization": "Remove one complete empty leading block only; preserve raw response and reject actual reasoning, incomplete tags or truncation.",
+    "regressionInput": "oksletsrythsiandseeifitatualdworks itshsouldbeatielfaster",
+    "actualGpuReproduction": false
+  }
 }

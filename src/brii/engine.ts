@@ -1,6 +1,6 @@
 import {WebWorkerMLCEngine,prebuiltAppConfig} from '@mlc-ai/web-llm';
 import {modelId} from '../shared';
-import {DecoderOutputError,decoderMessages,safeOutput,type DecodeResult,MAX_SEGMENT} from './decoding';
+import {DecoderOutputError,decoderMessages,safeOutput,stripNonThinkingPrefix,hasDecoderContent,type DecodeResult,MAX_SEGMENT} from './decoding';
 export const BRII_MODELS=[modelId,'Qwen3.5-0.8B-q4f16_1-MLC'];
 export class BriiEngine {
  ready=false; model=modelId; loadMs:number|null=null;
@@ -34,12 +34,12 @@ export class BriiEngine {
   if(!text.trim()||text.length>MAX_SEGMENT)throw Error(`Use 1–${MAX_SEGMENT} characters per correction.`);
   this.busy=true;const signal=this.lifetime.signal,engine=this.engine,start=performance.now();
   const task=async()=>{
-   await engine.resetChat();signal.throwIfAborted();let output='',first:number|null=null,truncated=false;
+   await engine.resetChat();signal.throwIfAborted();let output='',first:number|null=null,rawFirst:number|null=null,truncated=false,finishReason:string|null=null;
    const stream=await engine.chat.completions.create({messages:decoderMessages(text,context),temperature:0,max_tokens:Math.min(512,Math.max(64,Math.ceil(text.length*.9)+24)),stream:true,extra_body:{enable_thinking:false}});
-   for await(const chunk of stream){signal.throwIfAborted();const choice=chunk.choices[0],value=choice?.delta.content||'';if(value&&first===null)first=performance.now()-start;output+=value;if(choice?.finish_reason==='length')truncated=true;}
-   const totalMs=performance.now()-start;
-   try{return {corrected:safeOutput(output,truncated),rawOutput:output,ttftMs:first,totalMs};}
-   catch(e){if(!options.allowInvalid)throw e;return {corrected:output.replace(/\r\n?/g,'\n').trim(),rawOutput:output,validationError:String(e),ttftMs:first,totalMs};}
+   for await(const chunk of stream){signal.throwIfAborted();const choice=chunk.choices[0],value=choice?.delta.content||'';if(value&&rawFirst===null)rawFirst=performance.now()-start;output+=value;if(first===null&&hasDecoderContent(output))first=performance.now()-start;if(choice?.finish_reason)finishReason=choice.finish_reason;if(choice?.finish_reason==='length')truncated=true;}
+   const totalMs=performance.now()-start;const normalized=stripNonThinkingPrefix(output);const diagnostics={rawOutput:output,rawTtftMs:rawFirst,removedEmptyThinkingPrefix:normalized.removed,finishReason};
+   try{return {corrected:safeOutput(output,truncated),...diagnostics,ttftMs:first,totalMs};}
+   catch(e){if(!options.allowInvalid)throw e;return {corrected:normalized.text.trim(),...diagnostics,validationError:e instanceof Error?e.message:String(e),validationCode:e instanceof DecoderOutputError?e.code:'unknown',ttftMs:first,totalMs};}
   };
   try{return await this.guarded(task(),signal,60000);}catch(e){if(!signal.aborted&&!(e instanceof DecoderOutputError)){this.ready=false;this.progress('Inference failed. Reset and reload the local model.');}throw e;}finally{if(signal===this.lifetime.signal)this.busy=false;}
  }

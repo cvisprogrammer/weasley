@@ -16,7 +16,7 @@ export function errors(expected:string,actual:string) {
  const chars=Array.from(expected),words=expected.trim().split(/\s+/);const characterEdits=distance(chars,Array.from(actual)),wordEdits=distance(words,actual.trim()?actual.trim().split(/\s+/):[]);
  return {characterEdits,wordEdits,referenceCharacters:chars.length,referenceWords:words.length,cer:characterEdits/Math.max(1,chars.length),wer:wordEdits/Math.max(1,words.length)};
 }
-export interface BenchmarkRow extends Example {output:string|null;ttftMs:number|null;totalMs:number|null;metrics:ReturnType<typeof errors>|null;semanticChanges:number|null;rawOutput?:string;validationError?:string;error?:string;}
+export interface BenchmarkRow extends Example {output:string|null;ttftMs:number|null;totalMs:number|null;metrics:ReturnType<typeof errors>|null;semanticChanges:number|null;rawOutput?:string;validationError?:string;validationCode?:string;removedEmptyThinkingPrefix?:boolean;rawTtftMs?:number|null;finishReason?:string|null;error?:string;}
 export function summarize(rows:BenchmarkRow[]) {
  const complete=rows.filter(r=>r.metrics!==null),reviewed=complete.filter(r=>r.semanticChanges!==null);
  const percentile=(values:number[],p:number)=>{const sorted=values.slice().sort((a,b)=>a-b);return sorted.length?sorted[Math.ceil(sorted.length*p)-1]:null;};
