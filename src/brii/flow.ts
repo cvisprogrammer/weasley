@@ -27,7 +27,11 @@ export class BriiFlow {
   if(this.applying||!this.active()||(this.options.trustedOnly&&!event.isTrusted))return;const value=this.editor.value;
   clearTimeout(this.pauseTimer);
   const history=event.inputType==='historyUndo'||event.inputType==='historyRedo';
-  const appendOnly=!!this.before&&this.editor.isAppend(this.previous,value,this.before.start,this.before.end);this.before=undefined;
+  // Some editors consume beforeinput. Infer only an exact, collapsed append from
+  // the trusted input's data and unchanged surrounding text; never infer replacements.
+  const caret=this.editor.selectionStart,data=event.data;
+  const inferredAppend=!this.before&&event.inputType==='insertText'&&!!data&&value.length===this.previous.length+data.length&&caret===this.editor.selectionEnd&&value.slice(caret-data.length,caret)===data&&this.editor.isAppend(this.previous,value,caret-data.length,caret-data.length);
+  const appendOnly=this.before?this.editor.isAppend(this.previous,value,this.before.start,this.before.end):inferredAppend;this.before=undefined;
   if(history||!appendOnly)this.invalidate(history?'Undo/redo preserved. Type another Space to resume.':'Edit invalidated the previous correction.');
   if(this.options.rolling&&(history||!appendOnly))this.draft.protect(value.length);
   this.previous=value;

@@ -20,3 +20,11 @@ test('inserted spaces and punctuation do not replace the retained fused input',(
  const d=new RollingDraft();const raw='ileftsomedog';const first=d.segment(raw+' ',raw.length+1)!;d.applied(first,'I left some dog.');
  const shown='I left some dog. ';assert.equal(d.segment(shown,shown.length,true)!.raw,raw);
 });
+
+test('a protected first letter never becomes context for the rest of a fused word',()=>{
+ const d=new RollingDraft();d.protect(1);
+ const fused='okletstryiagianseefititwroks ';
+ assert.equal(d.segment(fused,fused.length),undefined);
+ const manual=d.segment(fused,fused.length,true,true)!;assert.equal(manual.raw,fused.trim());assert.equal(manual.context,'');
+ const next=fused+'teh ';const segment=d.segment(next,next.length)!;assert.equal(segment.raw,'teh');assert.equal(segment.context,fused);
+});

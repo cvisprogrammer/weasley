@@ -19,6 +19,10 @@ export class RollingDraft {
  segment(value:string,boundary:number,wholeSentence=false,manual=false):Segment|undefined {
   let start=Math.max(manual?0:this.protectedEnd,sentenceStart(value,boundary));
   const end=value.slice(0,boundary).trimEnd().length;if(end<=start)return;
+  // A protected character cannot become context for the rest of the SAME word.
+  // Keep that whole word protected; explicit manual decoding can revisit it.
+  if(!manual&&start===this.protectedEnd&&start>0&&/\S/.test(value[start-1]))while(start<end&&/\S/.test(value[start]))start++;
+  if(end<=start)return;
   if(!wholeSentence){const words=[...value.slice(start,end).matchAll(/\S+/g)];if(words.length>12)start+=words[words.length-12].index!;}
   // Never cut through a previous reconstruction: its raw spelling is indivisible.
   for(const revision of this.revisions)if(revision.start<start&&revision.end>start)start=revision.start;
