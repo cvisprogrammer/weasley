@@ -14,15 +14,28 @@ interface Revision {start:number;end:number;raw:string;}
 // Revisions retain what the user typed, not the model's previous guesses.
 export class RollingDraft {
  private revisions:Revision[]=[];
- private protectedEnd=0;
- protect(end:number){this.revisions=[];this.protectedEnd=end;}
+ private protectedRanges:{start:number;end:number}[]=[];
+ reset(){this.revisions=[];this.protectedRanges=[];}
+ protect(end:number){this.reset();if(end>0)this.protectedRanges=[{start:0,end}];}
+ edited(previous:string,value:string,history=false){
+  let start=0;while(start<previous.length&&start<value.length&&previous[start]===value[start])start++;
+  let oldEnd=previous.length,newEnd=value.length;
+  while(oldEnd>start&&newEnd>start&&previous[oldEnd-1]===value[newEnd-1]){oldEnd--;newEnd--;}
+  const delta=newEnd-oldEnd;let oldFrom=start,oldTo=oldEnd;
+  while(oldFrom>0&&/\S/.test(previous[oldFrom-1]))oldFrom--;while(oldTo<previous.length&&/\S/.test(previous[oldTo]))oldTo++;
+  // Backspacing raw, unresolved typing must not freeze the whole preceding draft.
+  // Protect Undo and deliberate edits to text that Brii actually reconstructed.
+  const overlaps=(r:{start:number;end:number})=>start===oldEnd?r.start<start&&r.end>start:r.start<oldEnd&&r.end>start;
+  const reconstructed=this.revisions.some(r=>r.end>oldFrom&&r.start<oldTo&&r.raw!==previous.slice(r.start,r.end));
+  const deliberate=history||reconstructed||this.protectedRanges.some(overlaps);
+  this.revisions=this.revisions.filter(r=>r.end<=oldFrom||r.start>=oldTo).map(r=>r.start>=oldEnd?{...r,start:r.start+delta,end:r.end+delta}:r);
+  this.protectedRanges=this.protectedRanges.flatMap(r=>r.end<=start?[r]:r.start>=oldEnd?[{start:r.start+delta,end:r.end+delta}]:[]);
+  if(deliberate){let from=start,to=newEnd;while(from>0&&/\S/.test(value[from-1]))from--;while(to<value.length&&/\S/.test(value[to]))to++;if(to>from)this.protectedRanges.push({start:from,end:to});}
+  this.protectedRanges.sort((a,b)=>a.start-b.start);this.protectedRanges=this.protectedRanges.reduce<{start:number;end:number}[]>((ranges,r)=>{const last=ranges.at(-1);if(last&&r.start<=last.end)last.end=Math.max(last.end,r.end);else ranges.push({...r});return ranges;},[]);
+ }
  segment(value:string,boundary:number,wholeSentence=false,manual=false):Segment|undefined {
-  let start=Math.max(manual?0:this.protectedEnd,sentenceStart(value,boundary));
+  let start=sentenceStart(value,boundary);
   const end=value.slice(0,boundary).trimEnd().length;if(end<=start)return;
-  // A protected character cannot become context for the rest of the SAME word.
-  // Keep that whole word protected; explicit manual decoding can revisit it.
-  if(!manual&&start===this.protectedEnd&&start>0&&/\S/.test(value[start-1]))while(start<end&&/\S/.test(value[start]))start++;
-  if(end<=start)return;
   if(!wholeSentence){const words=[...value.slice(start,end).matchAll(/\S+/g)];if(words.length>12)start+=words[words.length-12].index!;}
   // Never cut through a previous reconstruction: its raw spelling is indivisible.
   for(const revision of this.revisions)if(revision.start<start&&revision.end>start)start=revision.start;
@@ -32,11 +45,20 @@ export class RollingDraft {
   for(const revision of this.revisions){if(revision.start<start||revision.end>end)continue;raw+=value.slice(at,revision.start)+revision.raw;at=revision.end;}
   raw+=value.slice(at,end);
   if(raw.length>MAX_SEGMENT||shown.length>MAX_SEGMENT)throw Error(`Correction chunk exceeds ${MAX_SEGMENT} characters. Finish this sentence before continuing.`);
-  return {start,end,raw,context:value.slice(Math.max(0,start-400),start),prefix:value.slice(0,end)};
+  return {start,end,raw,context:value.slice(Math.max(0,start-400),start),prefix:value.slice(0,end),protectedRanges:this.protectedRanges.filter(r=>r.end>start&&r.start<end).map(r=>({...r}))};
  }
- applied(segment:Segment,text:string){
-  const delta=text.length-(segment.end-segment.start);
-  if(segment.start<this.protectedEnd)this.protectedEnd=Math.max(segment.start,this.protectedEnd+delta);
+ canApply(segment:Segment,text:string){
+  if(!segment.protectedRanges?.length)return true;
+  const shown=segment.prefix.slice(segment.start,segment.end);if(text===shown)return true;const boundaries=rawBoundaries(text,shown);
+  return (segment.protectedRanges||[]).every(r=>{const start=Math.max(r.start,segment.start)-segment.start,end=Math.min(r.end,segment.end)-segment.start;return text.slice(boundaries[start],boundaries[end])===shown.slice(start,end);});
+ }
+ applied(segment:Segment,text:string,manual=false){
+  const delta=text.length-(segment.end-segment.start),mapped=rawBoundaries(text,segment.prefix.slice(segment.start,segment.end));
+  this.protectedRanges=this.protectedRanges.flatMap(r=>{
+   if(r.end<=segment.start)return [r];if(r.start>=segment.end)return [{start:r.start+delta,end:r.end+delta}];
+   if(manual)return [...(r.start<segment.start?[{start:r.start,end:segment.start}]:[]),...(r.end>segment.end?[{start:segment.start+text.length,end:r.end+delta}]:[])];
+   return [{start:r.start<segment.start?r.start:segment.start+mapped[r.start-segment.start],end:r.end>segment.end?r.end+delta:segment.start+mapped[r.end-segment.start]}];
+  });
   this.revisions=this.revisions.filter(r=>r.end<=segment.start||r.start>=segment.end).map(r=>r.start>=segment.end?{...r,start:r.start+delta,end:r.end+delta}:r);
   const boundaries=rawBoundaries(segment.raw,text);
   for(const word of text.matchAll(/\S+|\s+/g)){const start=word.index!,end=start+word[0].length;this.revisions.push({start:segment.start+start,end:segment.start+end,raw:segment.raw.slice(boundaries[start],boundaries[end])});}

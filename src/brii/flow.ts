@@ -23,7 +23,7 @@ export class BriiFlow {
  private active(){return this.options.active?.()??true;}
  get isBusy(){return this.pending;}
  invalidate(message='Pending corrections cancelled.'){
-  clearTimeout(this.pauseTimer);this.epoch++;this.queued=undefined;clearTimeout(this.timer);if(this.active()){this.frontier=sentenceStart(this.editor.value,this.editor.selectionStart);this.previous=this.editor.value;}else{this.frontier=0;this.previous='';this.draft.protect(0);}if(this.pending)this.options.cancel();this.options.status(message);
+  clearTimeout(this.pauseTimer);this.epoch++;this.queued=undefined;clearTimeout(this.timer);if(this.active()){this.frontier=sentenceStart(this.editor.value,this.editor.selectionStart);this.previous=this.editor.value;}else{this.frontier=0;this.previous='';this.draft.reset();}if(this.pending)this.options.cancel();this.options.status(message);
  }
  manual(){if(this.composing||!this.active())return;this.editor.focus({preventScroll:true});if(this.editor.selectionStart!==this.editor.selectionEnd){this.options.status('Collapse the selection first. Selected text is never overwritten.');return;}this.enqueue(this.editor.selectionStart,true);}
  private input(event:InputEvent){
@@ -35,9 +35,9 @@ export class BriiFlow {
   if(change==='unchanged')return;
   clearTimeout(this.pauseTimer);
   const appendOnly=change==='append'||change==='restart';
-  if(change==='restart'){this.invalidate('New draft started.');this.draft.protect(0);}
+  if(change==='restart'){this.invalidate('New draft started.');this.draft.reset();}
+  if(this.options.rolling&&(change==='history'||change==='edit'))this.draft.edited(this.previous,value,history);
   if(change==='history'||change==='edit')this.invalidate(history?'Undo/redo preserved. Type another Space to resume.':'Edit invalidated the previous correction.');
-  if(this.options.rolling&&(change==='history'||change==='edit'))this.draft.protect(value.length);
   this.previous=value;
   if(this.composing||event.isComposing||history)return;
   if(this.options.rolling&&!this.pending)this.options.status(this.options.automatic()?'New typing is unprocessed. Press Space or Cmd/Ctrl+Enter to decode.':'New typing is unprocessed. Press Cmd/Ctrl+Enter to decode.');
@@ -65,7 +65,8 @@ export class BriiFlow {
     const selection:Selection={start:this.editor.selectionStart,end:this.editor.selectionEnd,direction:this.editor.selectionDirection};
     const plan=planReplacement(segment!,result.corrected,this.editor.value,selection);
     if(plan){
-     if(this.editor.value.slice(segment!.start,segment!.end)===result.corrected){unchanged=true;reason='The model returned the text unchanged. It may not have decoded it; the next completed words will be included in another attempt.';}
+     if(this.options.rolling&&!queued.manual&&!this.draft.canApply(segment!,result.corrected)){reason='Suggestion would overwrite a word you edited or undid; not applied. Manual correction can explicitly revisit it.';}
+     else if(this.editor.value.slice(segment!.start,segment!.end)===result.corrected){unchanged=true;reason='The model returned the text unchanged. It may not have decoded it; the next completed words will be included in another attempt.';}
      else{
       const beforeValue=this.editor.value,expectedValue=beforeValue.slice(0,plan.start)+plan.text+beforeValue.slice(plan.end);
       const scrollTop=this.editor.scrollTop,scrollLeft=this.editor.scrollLeft;this.applying=true;
@@ -78,7 +79,7 @@ export class BriiFlow {
        else{this.editor.setSelectionRange(selection.start,selection.end,selection.direction);reason='Browser rejected native insertion; original text preserved.';}
       }finally{this.applying=false;this.previous=this.editor.value;this.editor.scrollTop=scrollTop;this.editor.scrollLeft=scrollLeft;}
      }
-     if(applied){if(this.options.rolling)this.draft.applied(segment!,plan.text);this.frontier=plan.start+plan.text.length;if(this.queued&&this.queued.boundary>=plan.end)this.queued.boundary+=plan.delta;}
+     if(applied){if(this.options.rolling)this.draft.applied(segment!,plan.text,queued.manual);this.frontier=plan.start+plan.text.length;if(this.queued&&this.queued.boundary>=plan.end)this.queued.boundary+=plan.delta;}
     }
    }
    const completedEnd=segment!.start+(applied?result.corrected.length:segment!.end-segment!.start);
