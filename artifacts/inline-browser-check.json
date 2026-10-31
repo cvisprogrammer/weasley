@@ -1,0 +1,19 @@
+{
+  "provider": "Explicit fixture; no real OpenAI quality/latency or unpacked extension installation measured",
+  "offUntilConsent": true,
+  "closingDelimiterContextAndNativeUndoRedo": true,
+  "enterExecutesWithNewlineAndTailCaretPreserved": true,
+  "continuationOnlyInsertsTail": true,
+  "shiftEnterNeverExecutes": true,
+  "ordinarySlashesAndEnterUnchanged": true,
+  "escapeCancelsWithoutStaleInsertion": true,
+  "prefixEditInvalidatesPendingCommand": true,
+  "calendarNeverFabricatesAvailability": true,
+  "incompleteOutputLeavesCommandIntact": true,
+  "imeDoesNotExecuteUntilCompositionEnds": true,
+  "enterDoesNotReachHostSendAndPasswordExcluded": true,
+  "disableStopsExistingController": true,
+  "richEnterPreservesFormattingParagraphAndCaret": true,
+  "multilineRichInsertionAndUndo": true,
+  "syntheticEventsCannotSpend": true
+}

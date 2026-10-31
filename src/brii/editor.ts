@@ -13,7 +13,7 @@ export interface EditorSurface {
  canReplace(start:number,end:number):boolean;
  isAppend(previous:string,next:string,start:number,end:number):boolean;
  atBoundary(position:number):boolean;
- insertText(text:string):boolean;
+ insertText(text:string,multiline?:boolean):boolean;
 }
 export class PlainEditor implements EditorSurface {
  constructor(readonly element:HTMLTextAreaElement|HTMLInputElement){}
@@ -61,7 +61,7 @@ class RichSnapshot {
   };
   walk(root);
   // Block separators are virtual; the last paragraph has no trailing typed newline.
-  while(this.units.length){const last=this.units.at(-1)!;if(last.text||last.before.node!==last.after.node||last.before.offset!==last.after.offset)break;this.value=this.value.slice(0,last.start);this.units.pop();}
+  const last=this.units.at(-1);if(last&&!last.text&&last.before.node===last.after.node&&last.before.offset===last.after.offset){this.value=this.value.slice(0,last.start);this.units.pop();}
  }
  index(node:Node|null,offset:number):number|undefined {
   if(!node||!this.root.contains(node))return;
@@ -72,6 +72,7 @@ class RichSnapshot {
  }
  point(index:number,end=false):Point|undefined {
   if(index<0||index>this.value.length)return;
+  for(const [node,bound] of this.bounds)if(node instanceof HTMLElement&&blocks.has(node.tagName)&&bound.start===index&&bound.end===index)return {node,offset:0};
   // Prefer the next text run for a start, the previous one for an end.
   const list=end?[...this.units].reverse():this.units;
   for(const unit of list)if(unit.text&&index>=unit.start&&index<=unit.end)return {node:unit.before.node,offset:index-unit.start};
@@ -131,8 +132,9 @@ export class RichEditor implements EditorSurface {
  }
  atBoundary(position:number){const value=this.value;return position===value.length||value[position]==='\n';}
  canReplace(start:number,end:number){const snapshot=this.snapshot();if(/[\n\ufffc]/.test(snapshot.value.slice(start,end)))return false;const range=snapshot.range(start,end);return !!range&&safeFragment(range.cloneContents());}
- insertText(text:string){
-  if(/[\r\n]/.test(text))return false;
+ insertText(text:string,multiline=false){
+  if(/[\r\n]/.test(text)&&!multiline)return false;
+  if(multiline&&/[\r\n]/.test(text))return document.execCommand('insertText',false,text);
   const selected=this.selection();if(!selected||!this.canReplace(selected.start,selected.end))return false;
   const range=this.snapshot().range(selected.start,selected.end)!;const fragment=range.cloneContents();if(!safeFragment(fragment))return false;
   if(!fragment.querySelector('*'))return document.execCommand('insertText',false,text);

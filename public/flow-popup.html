@@ -1,11 +1,11 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><title>Brii Flow</title><link rel="stylesheet" href="style.css"><body>
-<h1>Brii Flow <small>GPT-4.1 · cloud decoder</small></h1>
-<p>Completed text and up to 400 preceding characters are sent to OpenAI when correction is enabled. Your API key stays in your local bridge. API usage costs apply.</p>
-<label><input id="enabled" type="checkbox"> Enable cloud corrections</label>
-<label><input id="automatic" type="checkbox"> Correct after Space</label>
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Brii · Inline commands</title><link rel="stylesheet" href="style.css"><body>
+<h1>Brii <small>Inline commands · experiment</small></h1>
+<p>Execute <code>//instruction//</code> on closing slashes, or <code>//instruction</code> with Enter. <code>//...//</code> continues a sentence. Shift+Enter inserts a newline; Escape cancels.</p>
+<p>Your instruction and nearby editor text are sent to OpenAI. The API key stays in your local bridge. API usage costs apply. Nothing is automatically sent or booked.</p>
+<label><input id="enabled" type="checkbox"> Enable cloud commands</label>
 <button id="allow">Allow this website</button> <button id="try">Try Brii</button>
 <output id="status" role="status">Checking local bridge…</output>
 <details><summary>Allowed websites</summary><ul id="sites"></ul></details>
-<details><summary>Start the bridge / timing</summary><p>In your repository terminal, set OPENAI_API_KEY, then run:</p><pre>npm run cloud</pre><p>For the prebuilt ZIP, run <code>node cloud-server.mjs</code> in the extracted folder. Node.js 22+ is required.</p><p>Never paste your API key here or into chat. The bridge listens only on 127.0.0.1:3001.</p><label>Space debounce (ms)<input id="delay" type="number" min="0" max="1000" step="10"></label></details>
-<p>Revisits 12 recent words using your raw typing, then rechecks the sentence after a short pause. Edits to decoded words and Undo protect those words. Cmd/Ctrl+Enter corrects manually. Ordinary Undo restores the raw text. Supports text inputs, textareas, and standard rich-text editors (experimental). Google Docs is not supported. Reload an allowed page after an extension update.</p>
+<details><summary>Start the bridge</summary><p>Set OPENAI_API_KEY in your terminal, then run:</p><pre>npm run cloud</pre><p>In a prebuilt ZIP folder, use <code>node cloud-server.mjs</code>. Node.js 22+ required. Never paste your key here or into chat.</p></details>
+<p>Undo restores the command. Ordinary text fields and standard rich-text editors are supported experimentally; Google Docs is not. Calendar and other external tools are not connected. Reload an allowed page after updating.</p>
 <script type="module" src="flow-popup.js"></script></body></html>

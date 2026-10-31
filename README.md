@@ -1,3 +1,76 @@
+# Brii · Inline commands
+
+This branch (`codex/brii-inline-commands`) is a separate experiment using the existing extension, editor adapters and loopback bridge. A GitHub fork is not needed. The typing-decoder extension remains on `codex/brii-flow`; its infrastructure and standalone playground are retained here.
+
+## Try it
+
+Stop the old bridge with Ctrl+C first, then in your checkout:
+
+```sh
+git fetch origin
+git switch codex/brii-inline-commands
+npm ci
+npm run build
+# OPENAI_API_KEY must be set in your own terminal; never send it in chat.
+npm run cloud
+```
+
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.0**.
+
+Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
+
+```text
+Hi David, //a casual greeting//
+```
+
+Typing the closing `//` executes immediately. You can keep typing afterward while waiting; only the marked command is replaced. Alternatively:
+
+```text
+Hi David,
+//a casual greeting
+```
+
+Press **Enter at the end of the command line** to execute and start a new line. Brii consumes that Enter so normal host send/submit handlers do not receive it. Another Enter while pending is consumed too. **Shift+Enter** inserts a newline without execution; **Escape** cancels pending work and keeps the command. Ordinary **Undo** restores the marked command after insertion. Pasting a command does not auto-execute; press Enter to run it.
+
+For sentence completion:
+
+```text
+Sorry to hear about //...//
+```
+
+Commands must begin at the start of a line or after whitespace. Ordinary single slashes and URL protocol slashes remain literal. To write a command-looking literal, use `\//` instead of `//`. If a host editor has its own conflicting slash behavior, compatibility needs testing. This branch does not run automatic Space-triggered typo correction.
+
+## Scope and privacy
+
+This prototype drafts text and continues sentences. It does not send messages, browse, read calendars, choose verified free times, or create events. Common calendar/availability requests are rejected before inference with an explicit not-connected message and remain in the editor. The model has no tools and is instructed to reject other tasks needing unavailable external access. No calendar access or OAuth permission was added.
+
+On enabled/allowed sites, executing a command sends up to 600 instruction characters plus up to 1200 preceding and 400 following characters from the same editor to OpenAI through the loopback helper. There is no webpage harvesting. Instructions are separate from quoted editor context. The API key stays in the helper, requests use `store:false`, and API usage costs apply. This does not imply zero provider retention. No command text is logged or persistently saved by Brii.
+
+Native editing preserves text outside the command, selection/caret, and Undo. Standard contenteditable editors are experimental; embedded objects and unsupported command markup are skipped. Google Docs is unsupported. Actual live ChatGPT/Gmail/Wikipedia compatibility and generation quality are not verified here. In particular, fixture tests validate host bubble-handler interception, not every site's earlier window/document capture handlers. Review drafts before sending.
+
+## Build and checks
+
+```sh
+npm run typecheck
+npm test
+npm run build
+npm run test:inline-browser
+npm run test:cloud-browser
+npm run test:rich-browser
+npm run test:brii-browser
+npm run package
+```
+
+Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
+
+The prebuilt package is `artifacts/brii-inline-0.6.0.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after switching branches because the command endpoint is new.
+
+To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
+
+---
+
+The following is retained documentation for the decoder experiment; this branch's default extension and root playground use inline commands as described above.
+
 # Brii Flow
 
 Brii reconstructs sloppy typing using **GPT-4.1 with the original raw-only decoder prompt**. This replaces GPT-4.1-mini based on the user’s three-case comparison; the raw + current-draft experiment regressed and is no longer used for normal editing. See [comparison results and limits](docs/BRII_CLOUD_COMPARISON.md). The default Chrome extension now uses a small loopback helper; the API key stays in that helper, outside Chrome. Cloud correction is off until you enable it and allow a website.

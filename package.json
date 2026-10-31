@@ -1,6 +1,6 @@
 {
   "name": "weasley",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,7 +17,8 @@
     "benchmark:cloud": "node scripts/cloud-revision-benchmark.mjs",
     "benchmark:models": "node scripts/cloud-model-benchmark.mjs",
     "test:cloud-browser": "node scripts/cloud-browser-check.mjs",
-    "test:rich-browser": "node scripts/rich-browser-check.mjs"
+    "test:rich-browser": "node scripts/rich-browser-check.mjs",
+    "test:inline-browser": "node scripts/inline-browser-check.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "0.2.86",

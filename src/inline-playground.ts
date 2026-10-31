@@ -1,0 +1,12 @@
+import {InlineCommands,commandTransport} from './brii/commands';import {PlainEditor} from './brii/editor';import {cloudSettings} from './brii/cloud';import {extensionTransport} from './brii/cloud-client';
+const $=(id:string)=>document.getElementById(id)!;const consent=$('consent') as HTMLInputElement,editor=$('editor') as HTMLTextAreaElement,extension=location.protocol==='chrome-extension:';let ready=false,extensionId='';const pending=new Map<string,AbortController>();
+const send=extension?extensionTransport:async(message:any)=>{
+ if(message.kind==='cancel'){pending.get(message.requestId)?.abort();return {ok:true};}
+ const health=message.kind==='health',abort=new AbortController();if(!health)pending.set(message.requestId,abort);
+ try{const response=await fetch(health?'/health':'/command',{method:health?'GET':'POST',headers:{'Content-Type':'application/json','X-Brii-Extension':extensionId},...(health?{}:{body:JSON.stringify({instruction:message.instruction,mode:message.mode,before:message.before,after:message.after})}),signal:AbortSignal.any([abort.signal,AbortSignal.timeout(50000)]),cache:'no-store'});const data=await response.json();return response.ok?data:{error:data.error||'Command failed.'};}finally{if(!health)pending.delete(message.requestId);}
+};
+const flow=new InlineCommands(new PlainEditor(editor),editor,{active:()=>consent.checked,ready:()=>ready&&consent.checked,run:commandTransport(send),status:message=>{$('status').textContent=message;}});
+async function health(){try{const h=await send({kind:'health'});extensionId=h.extensionId||'';ready=!!h.enabled&&h.commands===true;$('bridgeStatus').textContent=h.error||(h.commands!==true?'Update and restart the bridge for inline commands.':!h.enabled?'Set OPENAI_API_KEY and restart the bridge.':`Ready · ${h.model} · inline commands`);}catch{ready=false;$('bridgeStatus').textContent='Start npm run cloud in your terminal.';}}
+consent.onchange=async()=>{flow.invalidate(consent.checked?'Cloud commands enabled.':'Cloud commands off.');if(extension){const settings=await cloudSettings();await chrome.storage.local.set({briiCloud:{...settings,enabled:consent.checked}});}await health();};
+if(extension){void cloudSettings().then(settings=>{consent.checked=settings.enabled;void health();});chrome.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&changes.briiCloud){consent.checked=!!(changes.briiCloud.newValue as {enabled?:boolean}|undefined)?.enabled;flow.invalidate('Cloud settings changed.');}});}else void health();
+window.addEventListener('pagehide',()=>flow.dispose());

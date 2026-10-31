@@ -17,7 +17,7 @@ async function page(html){
  const page=await context.newPage();page.on('pageerror',e=>console.log('Rich page error:',String(e)));await page.route('https://rich.test/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><body>'+html}));
  await page.addInitScript(()=>{window.inputEvents=[];window.chrome={storage:{local:{get:async()=>({briiCloud:{enabled:true,automatic:true,sites:['https://rich.test'],delay:10}})},onChanged:{addListener:()=>{}}},runtime:{sendMessage:m=>window.richBridge(m)}};document.addEventListener('input',e=>window.inputEvents.push({type:e.inputType,trusted:e.isTrusted}),true);});
  await page.exposeFunction('richBridge',async m=>{if(m.kind==='cancel')return {ok:true};const r=await fetch(bridge+'/correct',{method:'POST',headers:{'Content-Type':'application/json','X-Brii-Extension':extensionId,Origin:'chrome-extension://'+extensionId},body:JSON.stringify({text:m.text,context:m.context,current:m.current})});return r.json();});
- await page.goto('https://rich.test/');await page.addScriptTag({path:'dist/flow-content.js'});return page;
+ await page.goto('https://rich.test/');await page.addScriptTag({path:'dist/decoder-content.js'});return page;
 }
 async function end(page){await page.locator('#editor').focus();await page.locator('#editor').evaluate(e=>{const r=document.createRange();r.selectNodeContents(e);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r);});}
 async function text(page){return page.locator('#editor').innerText();}
