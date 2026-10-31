@@ -1,6 +1,6 @@
 {
   "name": "weasley",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,15 +18,19 @@
     "benchmark:models": "node scripts/cloud-model-benchmark.mjs",
     "test:cloud-browser": "node scripts/cloud-browser-check.mjs",
     "test:rich-browser": "node scripts/rich-browser-check.mjs",
-    "test:inline-browser": "node scripts/inline-browser-check.mjs"
+    "test:inline-browser": "node scripts/inline-browser-check.mjs",
+    "test:lexical-browser": "node scripts/lexical-browser-check.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "0.2.86",
     "htmlparser2": "10.0.0"
   },
   "devDependencies": {
+    "@lexical/history": "0.53.0",
+    "@lexical/rich-text": "0.53.0",
     "@types/chrome": "^0.1.24",
     "esbuild": "^0.25.0",
+    "lexical": "0.53.0",
     "playwright-core": "^1.56.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.3"

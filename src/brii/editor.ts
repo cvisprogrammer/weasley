@@ -14,6 +14,8 @@ export interface EditorSurface {
  isAppend(previous:string,next:string,start:number,end:number):boolean;
  atBoundary(position:number):boolean;
  insertText(text:string,multiline?:boolean):boolean;
+ settleInsertion?():Promise<void>|undefined;
+ insertionIssue?(text:string):string|undefined;
 }
 export class PlainEditor implements EditorSurface {
  constructor(readonly element:HTMLTextAreaElement|HTMLInputElement){}
@@ -126,14 +128,20 @@ export class RichEditor implements EditorSurface {
  setSelectionRange(start:number,end:number,direction:TextSelection['direction']='none'){
   const snapshot=this.snapshot(),a=snapshot.point(start),b=snapshot.point(end,true),selection=document.getSelection();if(!a||!b||!selection)throw Error('Editor selection changed; correction cancelled.');
   if(direction==='backward')selection.setBaseAndExtent(b.node,b.offset,a.node,a.offset);else selection.setBaseAndExtent(a.node,a.offset,b.node,b.offset);
+  // Lexical tracks its own selection; synchronize it before the native edit.
+  if(this.element.hasAttribute('data-lexical-editor'))document.dispatchEvent(new Event('selectionchange'));
  }
  isAppend(previous:string,next:string,start:number,end:number){
   return start===end&&(start===previous.length||previous[start]==='\n')&&next.length>=previous.length&&next.startsWith(previous.slice(0,start))&&next.endsWith(previous.slice(start));
  }
  atBoundary(position:number){const value=this.value;return position===value.length||value[position]==='\n';}
  canReplace(start:number,end:number){const snapshot=this.snapshot();if(/[\n\ufffc]/.test(snapshot.value.slice(start,end)))return false;const range=snapshot.range(start,end);return !!range&&safeFragment(range.cloneContents());}
+ insertionIssue(text:string){return this.element.hasAttribute('data-lexical-editor')&&/[\r\n]/.test(text)?'This editor currently supports one-paragraph rewrites. Ask for one paragraph.':undefined;}
+ // Lexical commits its controlled edit in a microtask, not inside execCommand.
+ settleInsertion(){return this.element.hasAttribute('data-lexical-editor')?Promise.resolve():undefined;}
  insertText(text:string,multiline=false){
   if(/[\r\n]/.test(text)&&!multiline)return false;
+  if(multiline&&this.element.hasAttribute('data-lexical-editor'))return text==='\n'?false:document.execCommand('insertText',false,text);
   if(multiline&&/[\r\n]/.test(text))return document.execCommand('insertText',false,text);
   const selected=this.selection();if(!selected||!this.canReplace(selected.start,selected.end))return false;
   const range=this.snapshot().range(selected.start,selected.end)!;const fragment=range.cloneContents();if(!safeFragment(fragment))return false;

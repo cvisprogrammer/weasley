@@ -55,19 +55,21 @@ export class InlineCommands {
   if(command.lineText.length>1600){this.options.status('Keep a rewrite line under 1600 characters.');return;}
   if(command.instruction.length>600){this.options.status('Keep the instruction under 600 characters.');return;}
   if(!this.editor.canReplace(command.start,command.end)){this.options.status('Command contains unsupported formatting or embedded content.');return;}
-  if(newline){this.applying=true;try{this.editor.insertText('\n',true);}finally{this.applying=false;}}
+  let newlineInserted=false;if(newline){this.applying=true;try{newlineInserted=this.editor.insertText('\n',true);}finally{this.applying=false;}}
   const state={abort:new AbortController(),command,epoch:this.epoch,caret:this.editor.selectionStart};this.pending=state;
-  this.options.status(command.scope==='line'?'Rewriting this line… editing it cancels. Other lines stay unchanged. Escape cancels.':'Running command… keep typing. Escape cancels.');
-  void this.options.run(command,state.abort.signal).then(result=>{
+  this.options.status((command.scope==='line'?'Rewriting this line… editing it cancels. Other lines stay unchanged. Escape cancels.':'Running command… keep typing. Escape cancels.')+(newline&&!newlineInserted?' Enter runs the command here; use Shift+Enter for a newline.':''));
+  void this.options.run(command,state.abort.signal).then(async result=>{
    const caret=this.editor.selectionStart,selectionEnd=this.editor.selectionEnd,insideOriginal=command.scope==='line'&&caret===selectionEnd&&caret===state.caret;
    if(state.abort.signal.aborted||state.epoch!==this.epoch||!this.options.active()||this.composing||!this.editor.isFocused()||!this.matches(command)||!insideOriginal&&(caret<command.end||selectionEnd<command.end)){if(this.pending===state)this.options.status('Result discarded after editing, blur or selection change.');return;}
    if(typeof result.text!=='string'||!result.text.trim()||result.text.length>2400)throw Error('Empty or oversized command response.');
+   const insertionIssue=this.editor.insertionIssue?.(result.text);if(insertionIssue)throw Error(insertionIssue);
    const value=this.editor.value,selection={start:this.editor.selectionStart,end:this.editor.selectionEnd,direction:this.editor.selectionDirection},delta=result.text.length-(command.end-command.start),scrollTop=this.editor.scrollTop,scrollLeft=this.editor.scrollLeft;
    const expected=value.slice(0,command.start)+result.text+value.slice(command.end);this.applying=true;
    try{
     this.editor.setSelectionRange(command.start,command.end);
-    const applied=this.editor.insertText(result.text,true);
-    if(applied&&this.editor.value===expected){if(selection.start<command.end)this.editor.setSelectionRange(command.start+result.text.length,command.start+result.text.length);else this.editor.setSelectionRange(selection.start+delta,selection.end+delta,selection.direction);this.options.status(`Inserted · ${result.model||'AI'}${result.totalMs!==undefined?' · '+Math.round(result.totalMs)+' ms':''} · Undo restores command`);}
+    this.editor.insertText(result.text,true);
+    const commit=this.editor.settleInsertion?.();if(commit)await commit;
+    if(this.editor.value===expected){if(selection.start<command.end)this.editor.setSelectionRange(command.start+result.text.length,command.start+result.text.length);else this.editor.setSelectionRange(selection.start+delta,selection.end+delta,selection.direction);this.options.status(`Inserted · ${result.model||'AI'}${result.totalMs!==undefined?' · '+Math.round(result.totalMs)+' ms':''} · Undo restores command`);}
     else if(this.editor.value===value){this.editor.setSelectionRange(selection.start,selection.end,selection.direction);this.options.status('Editor rejected insertion. Command kept.');}
     else this.options.status('Host editor changed the insertion; result not confirmed.');
    }finally{this.applying=false;this.editor.scrollTop=scrollTop;this.editor.scrollLeft=scrollLeft;}

@@ -1,0 +1,10 @@
+{
+  "editor": "Real Lexical 0.53.0 with rich-text and history plugins",
+  "provider": "Explicit text fixture. No live Messenger or OpenAI inference tested.",
+  "fullEmojiParagraphUpdatesDOMAndLexicalState": true,
+  "frameworkUndoRedoAndSubsequentTyping": true,
+  "enterRunsAndShiftEnterKeepsOtherParagraphsAndNewTyping": true,
+  "formattedLexicalRunsUseFrameworkCompatibleNativeText": true,
+  "staleRewriteStillCancelled": true,
+  "unsupportedMultilineLeavesTextAndSelectionIntact": true
+}

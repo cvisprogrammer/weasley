@@ -15,7 +15,7 @@ npm run build
 npm run cloud
 ```
 
-Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.1**.
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.2**.
 
 Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
 
@@ -30,7 +30,7 @@ Hi David,
 //a casual greeting
 ```
 
-Press **Enter at the end of the command line** to execute and start a new line. Brii consumes that Enter so normal host send/submit handlers do not receive it. Another Enter while pending is consumed too. **Shift+Enter** inserts a newline without execution; **Escape** cancels pending work and keeps the command. Ordinary **Undo** restores the marked command after insertion. Pasting a command does not auto-execute; press Enter to run it.
+Press **Enter at the end of the command line** to execute. Ordinary fields also start a new line; Lexical-based composers keep the cursor on the command line, so use Shift+Enter for a newline. Brii consumes that Enter so normal host send/submit handlers do not receive it. Another Enter while pending is consumed too. **Shift+Enter** inserts a newline without execution; **Escape** cancels pending work and keeps the command. Ordinary **Undo** restores the marked command after insertion. Pasting a command does not auto-execute; press Enter to run it.
 
 For sentence completion:
 
@@ -48,6 +48,16 @@ On enabled/allowed sites, executing a command sends up to 600 instruction charac
 
 Native editing preserves text outside the target line or insertion span, selection/caret, and Undo. A line means a newline-delimited line or rich-text paragraph, not a visual wrap. When triggered in the middle of the target line, the caret moves to the end of the rewritten text. Standard contenteditable editors are experimental; embedded objects and unsupported command markup are skipped. Google Docs is unsupported. Actual live ChatGPT/Gmail/Wikipedia compatibility and generation quality are not verified here. In particular, fixture tests validate host bubble-handler interception, not every site's earlier window/document capture handlers. Review drafts before sending.
 
+## Messenger / Lexical compatibility
+
+Version 0.6.2 synchronizes native DOM selection with Lexical using the standard selection-change notification, inserts plain text through a native editing command, and waits for Lexical's microtask commit before confirming the result. It does not access private editor objects or rewrite the managed DOM. Success is based on the retained editor text, not the native command's return flag.
+
+A real Lexical 0.53.0 fixture reproduces the former “Editor rejected insertion” error with an emoji-heavy paragraph, then verifies the fix against both DOM text and Lexical's actual document state. Checks include native framework Undo/Redo, typing afterward, surrounding paragraphs, Unicode emojis, Enter/Shift+Enter, and stale-response rejection. Lexical packages are development-only test dependencies and are not bundled into the extension.
+
+Live Facebook/Messenger has not been tested here and may use a different Lexical version or additional handlers. Formatting within a rewritten Lexical line follows the host's native plain-text insertion behavior. Only one-paragraph generated rewrites are supported there; a requested multiline result is rejected before selecting/replacing text. Enter executes the command without synthesizing a paragraph event; Shift+Enter invokes the host's normal newline behavior. Generic rich editors retain their existing multiline support.
+
+After updating, run `npm ci` to install the new test dependencies, build, reload Brii and refresh the Facebook tab. No bridge restart is required for this frontend-only fix; the existing v2 command protocol is unchanged.
+
 ## Build and checks
 
 ```sh
@@ -55,6 +65,7 @@ npm run typecheck
 npm test
 npm run build
 npm run test:inline-browser
+npm run test:lexical-browser
 npm run test:cloud-browser
 npm run test:rich-browser
 npm run test:brii-browser
@@ -63,7 +74,7 @@ npm run package
 
 Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
 
-The prebuilt package is `artifacts/brii-inline-0.6.1.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.1: the command protocol is now `inline-commands-v2`, and an older bridge is rejected.
+The prebuilt package is `artifacts/brii-inline-0.6.2.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge when moving from 0.6.0 to 0.6.1 or later: the command protocol is now `inline-commands-v2`, and an older bridge is rejected.
 
 To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
 
