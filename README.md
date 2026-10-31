@@ -15,7 +15,7 @@ npm run build
 npm run cloud
 ```
 
-Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.5**.
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.6**.
 
 Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
 
@@ -46,13 +46,13 @@ In the Brii popup, choose **Command trigger**: `;;` (the new default), `//`, `--
 
 The extension saves your choice locally and updates attached editors immediately, cancelling pending commands when settings change. Existing installations without a saved trigger now use `;;`; select `//` to restore the old syntax. The extension playground uses the same setting. The standalone localhost playground has its own selector, remembered in that browser's local storage.
 
-Version 0.6.5 adds webpage context and requires restarting the bridge, reloading the extension and refreshing allowed pages. The command protocol is now `inline-commands-v4`.
+Version 0.6.6 adds hostname metadata and a universal page-context fallback, and requires restarting the bridge, reloading the extension and refreshing allowed pages. The command protocol is now `inline-commands-v5`.
 
 ## Scope and privacy
 
 This prototype drafts text and continues sentences. It does not send messages, browse, read calendars, choose verified free times, or create events. Common calendar/availability requests are rejected before inference with an explicit not-connected message and remain in the editor. The model has no tools and is instructed to reject other tasks needing unavailable external access. No calendar access or OAuth permission was added.
 
-On enabled/allowed sites, executing a command sends up to 600 instruction characters, the target line for rewrites (up to 1600 characters, with command markers removed), plus up to 1200 preceding and 400 following characters from the same editor to OpenAI through the loopback helper. In Gmail, commands additionally include up to 8,000 characters from the visible thread associated with the reply editor or its own quoted original, collected only on command execution. With **Include visible page/thread context** enabled (default), other allowed sites also include up to 8,000 characters of visible source page context. Turn it off to use only editor text, including in Gmail. Email and webpage context share one 8,000-character budget. Instructions are separate from quoted editor/email context. The API key stays in the helper, requests use `store:false`, and API usage costs apply. This does not imply zero provider retention. No command text is logged or persistently saved by Brii.
+On enabled/allowed sites, executing a command sends up to 600 instruction characters, the target line for rewrites (up to 1600 characters, with command markers removed), plus up to 1200 preceding and 400 following characters from the same editor to OpenAI through the loopback helper. In Gmail, commands additionally include up to 8,000 characters from the visible thread associated with the reply editor or its own quoted original, collected only on command execution. With **Include visible page/thread context** enabled (default), other allowed sites also include up to 8,000 characters of visible source page context. Turn it off to use only editor text, including in Gmail. Email and webpage context share one 8,000-character budget. With context enabled, a separate `pageDomain` hostname (for example `forum.example.com`) is also sent, even when no source text is available. It excludes URL paths, query strings, fragments, ports and credentials. Turning context off omits the domain too. Instructions are separate from quoted editor/email/page context. The API key stays in the helper, requests use `store:false`, and API usage costs apply. This does not imply zero provider retention. No command text is logged or persistently saved by Brii.
 
 Native editing preserves text outside the target line or insertion span, selection/caret, and Undo. A line means a newline-delimited line or rich-text paragraph, not a visual wrap. When triggered in the middle of the target line, the caret moves to the end of the rewritten text. Standard contenteditable editors are experimental; embedded objects and unsupported command markup are skipped. Google Docs is unsupported. Actual live ChatGPT/Gmail/Wikipedia compatibility and generation quality are not verified here. In particular, fixture tests validate host bubble-handler interception, not every site's earlier window/document capture handlers. Review drafts before sending.
 
@@ -68,7 +68,7 @@ For the Lexical fix itself, build, reload Brii and refresh the Facebook tab. Ver
 
 ## Gmail reply context
 
-Version 0.6.3 reads visible source messages in the reply editor's enclosing Gmail conversation, regardless of whether they appear above or below your draft. Popout composers use their own visible quoted original when available; they do not borrow an unrelated open thread. No Gmail API, OAuth, inbox scan, attachment reading, or automatic expansion is involved.
+Version 0.6.3 reads visible source messages in the reply editor's enclosing Gmail conversation, regardless of whether they appear above or below your draft. Popout composers prefer their own visible quoted original when available. Generic context stays within an enclosing composer dialog when present. No Gmail API, OAuth, inbox scan, attachment reading, or automatic expansion is involved.
 
 Allow `https://mail.google.com` in Brii, open an email, click Reply, and type this on a line of its own:
 
@@ -80,15 +80,15 @@ Press Enter, or finish with `;;` (or your selected marker). The output replaces 
 
 Source context is a separate untrusted `emailContext` field. It includes the visible subject and message bodies, excludes other editable drafts, hidden/private content and unrelated page regions, and is capped at 8,000 characters, retaining the latest end when truncated. Collapsed messages, hidden “…” quotes, attachments and unrendered email text are unavailable: expand them before running the command. Gmail selectors are best effort; live Gmail and model summary/reply quality have not been verified here. The browser regression uses a Gmail-shaped DOM and explicit provider fixture, while bridge tests verify the actual OpenAI payload.
 
-When upgrading to 0.6.5, restart `npm run cloud`; reload the extension and refresh Gmail after updating. This feature uses the existing GPT-4.1 cloud bridge: source email text is sent to OpenAI on an explicit command in enabled/allowed Gmail, not during normal typing.
+When upgrading to 0.6.6, restart `npm run cloud`; reload the extension and refresh Gmail after updating. This feature uses the existing GPT-4.1 cloud bridge: source email text is sent to OpenAI on an explicit command in enabled/allowed Gmail, not during normal typing.
 
 ## Webpage context for replies
 
-Version 0.6.5 adds **Include visible page/thread context** in the popup, enabled by default. It applies only on already enabled/allowed websites and only when you execute a command. Turning it off cancels pending commands and disables external source context for both webpages and Gmail; ordinary before/after editor context remains.
+Version 0.6.6 uses **Include visible page/thread context** in the popup, enabled by default, across all allowed websites. It applies only on already enabled/allowed websites and only when you execute a command. Turning it off cancels pending commands and disables external source context for both webpages and Gmail; ordinary before/after editor context remains.
 
 - **Hacker News:** post title/text, the comment being replied to, and its ancestor comments based on thread indentation. Supports the separate `/reply` page. Sibling replies are excluded.
 - **Reddit:** post title/body and the enclosing comment/ancestor chain, with adapters for modern light-DOM `shreddit-*` markup and old Reddit. Feed views without an identifiable single post are not treated as an entire thread.
-- **Other pages:** a nearby or single visible article/main region. No whole-body fallback. Navigation, sidebars, forms, editable drafts, private/hidden elements and controls are excluded.
+- **Every allowed website:** generic extraction needs no site-specific integration. It prefers a nearby article/main region or active dialog, then a conversation/card around the editor, then a single article/main region, and finally filtered visible body text. Form-based layouts are supported while field values, editable drafts, hidden/private content, navigation, sidebars and controls are excluded. An empty active dialog does not borrow another open thread. Reddit/HN/Gmail readers are optional refinements; if they find no source, the same generic fallback is available.
 
 Allow the site in Brii, click Reply, and type on a line of its own:
 
@@ -96,9 +96,9 @@ Allow the site in Brii, click Reply, and type on a line of its own:
 ;;draft a short reply that acknowledges their point and asks a thoughtful follow-up;;
 ```
 
-The separately labelled `pageContext` includes up to 8,000 characters, prioritizing the direct comment over ancestor context. The prompt treats source text as untrusted data and instructions as a separate field. It may use the source for drafting but is told not to follow instructions embedded in it. Source posts/comments are never edited. Results replace only the command or the existing target line and remain reversible with Undo.
+The separate `pageDomain` field identifies the current hostname, while `pageContext` includes up to 8,000 characters, prioritizing the direct comment over ancestor context. The prompt treats source text as untrusted data and instructions as a separate field. It may use the source for drafting but is told not to follow instructions embedded in it. Source posts/comments are never edited. Results replace only the command or the existing target line and remain reversible with Undo.
 
-This reads rendered DOM text only: it does not follow links, fetch linked articles, load more comments, open collapsed text, inspect other tabs, read images/attachments, or traverse shadow-root editors. Site adapters are best effort and need live retesting as markup changes. Browser tests use Reddit/HN-shaped DOM fixtures and the real local bridge with an explicit provider fixture; live site compatibility and model response quality have not been measured. The standalone playground still uses its own editor text rather than another webpage.
+This reads rendered DOM text only: it does not follow links, fetch linked articles, load more comments, open collapsed text, inspect other tabs, read images/attachments, or traverse shadow-root editors. Site adapters are best effort and need live retesting as markup changes. Browser tests use Reddit/HN-shaped DOM fixtures and the real local bridge with an explicit provider fixture; live site compatibility and model response quality have not been measured. The standalone playground sends its own hostname and editor text rather than another webpage. No broad all-sites permission is added: allow each website as before. Generic extraction is best effort, not a guarantee that every custom editor or every page layout works.
 
 ## Build and checks
 
@@ -118,7 +118,7 @@ npm run package
 
 Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
 
-The prebuilt package is `artifacts/brii-inline-0.6.5.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.5: the command protocol is now `inline-commands-v4`, and an older bridge is rejected.
+The prebuilt package is `artifacts/brii-inline-0.6.6.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.6: the command protocol is now `inline-commands-v5`, and an older bridge is rejected.
 
 To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
 

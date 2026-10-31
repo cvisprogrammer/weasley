@@ -1,5 +1,6 @@
 import {InlineCommands,commandTransport} from './brii/commands';
 import {selectedTrigger} from './brii/trigger';
+import {websiteDomain} from './brii/page-domain';
 import {webpageContext} from './brii/webpage-context';
 import {gmailContext} from './brii/gmail-context';
 import {PlainEditor,RichEditor} from './brii/editor';
@@ -20,7 +21,7 @@ if(!global.__briiCommands){
   const marker=selectedTrigger(config?.commandTrigger);show(`Ready · ${marker}instruction${marker} or ${marker}instruction then Enter`);if(known.has(element))return;
   for(const item of controllers)if(!item.element.isConnected){item.flow.dispose();known.delete(item.element);controllers.delete(item);}
   known.add(element);const plain=safeField(element);
-  const flow=new InlineCommands(plain?new PlainEditor(element):new RichEditor(element),element,{active:()=>active()&&(plain?safeField(element):richHost(element)===element),ready:active,trustedOnly:true,trigger:()=>selectedTrigger(config?.commandTrigger),context:()=>config?.includePageContext!==false?gmailContext(element):'',pageContext:()=>config?.includePageContext!==false?webpageContext(element):'',run:commandTransport(extensionTransport),status:show});controllers.add({element,flow});
+  const flow=new InlineCommands(plain?new PlainEditor(element):new RichEditor(element),element,{active:()=>active()&&(plain?safeField(element):richHost(element)===element),ready:active,trustedOnly:true,trigger:()=>selectedTrigger(config?.commandTrigger),source:()=>{if(config?.includePageContext===false)return {};const emailContext=gmailContext(element);return {pageDomain:websiteDomain(location.href,globalThis.origin),...(emailContext?{emailContext}:{pageContext:webpageContext(element)})};},run:commandTransport(extensionTransport),status:show});controllers.add({element,flow});
  }
  document.addEventListener('focusin',event=>{if(event.isTrusted)attach(event.target as Element);},true);
  void cloudSettings().then(settings=>{config=settings;attach(document.activeElement);});

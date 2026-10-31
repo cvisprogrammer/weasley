@@ -8,6 +8,11 @@
   "oldRedditSupported": true,
   "articleFallbackExcludesFieldsDraftsHiddenAndNavigation": true,
   "pageContextBounded": true,
-  "noWholeBodyFallback": true,
-  "gmailKeepsDedicatedAdapter": true
+  "navigationOnlyPageHasNoSourceContext": true,
+  "genericReaderAlsoAvailableOnGmail": true,
+  "plainBodyLayoutSupportedOnUnknownDomain": true,
+  "nearEditorContextPrioritizedWithoutSiteAdapter": true,
+  "formLayoutReadsSourceTextWithoutFieldValues": true,
+  "siteRefinementsNeverGateGenericFallback": true,
+  "emptyComposerDialogDoesNotBorrowUnrelatedMain": true
 }
