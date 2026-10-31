@@ -7,6 +7,7 @@
 <label><input id="includePageContext" type="checkbox"> Include visible page/thread context</label>
 <label><input id="enabled" type="checkbox"> Enable cloud commands</label>
 <button id="allow">Allow this website</button> <button id="try">Try Brii</button>
+<output id="websiteStatus" role="status">Checking current website…</output>
 <output id="status" role="status">Checking local bridge…</output>
 <details><summary>Allowed websites</summary><ul id="sites"></ul></details>
 <details><summary>Start the bridge</summary><p>Set OPENAI_API_KEY in your terminal, then run:</p><pre>npm run cloud</pre><p>In a prebuilt ZIP folder, use <code>node cloud-server.mjs</code>. Node.js 22+ required. Never paste your key here or into chat.</p></details>

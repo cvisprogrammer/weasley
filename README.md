@@ -15,7 +15,7 @@ npm run build
 npm run cloud
 ```
 
-Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.7**.
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.8**.
 
 Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
 
@@ -47,6 +47,14 @@ In the Brii popup, choose **Command trigger**: `;;` (the new default), `//`, `--
 The extension saves your choice locally and updates attached editors immediately, cancelling pending commands when settings change. Existing installations without a saved trigger now use `;;`; select `//` to restore the old syntax. The extension playground uses the same setting. The standalone localhost playground has its own selector, remembered in that browser's local storage.
 
 Version 0.6.6 adds hostname metadata and a universal page-context fallback, and requires restarting the bridge, reloading the extension and refreshing allowed pages. The command protocol is now `inline-commands-v5`.
+
+## One-click website access
+
+Version 0.6.8 stages the intended exact origin/tab in extension session storage before requesting Chrome's optional host permission. A matching `permissions.onAdded` event lets the background worker save Brii's allow-list and attach the content script even if Chrome's native prompt closes the popup. Already-granted permission is finalized through the same worker without another native event. Denied, unrelated and expired requests do not authorize a site. If attachment fails after saving, the popup asks for a tab refresh instead of discarding the allow-list entry.
+
+The popup shows the current origin's allowed/not-allowed state separately from bridge health and whether cloud commands are enabled. It refreshes settings when the worker saves access and merges setting changes with the latest saved settings. The handoff uses session storage for origin/tab/time only; no page text or API key is saved there. Tests simulate popup disappearance after a first grant, denied/unrelated grants, exact-origin port boundaries, existing permission, and an injection failure. The native Chrome permission dialog itself is not automated in this workspace.
+
+Update/build, reload the extension, and refresh the page. No bridge restart is required when upgrading from 0.6.6 or 0.6.7; the v5 bridge protocol is unchanged.
 
 ## Scope and privacy
 
@@ -120,7 +128,7 @@ npm run package
 
 Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
 
-The prebuilt package is `artifacts/brii-inline-0.6.7.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.6: the command protocol is now `inline-commands-v5`, and an older bridge is rejected.
+The prebuilt package is `artifacts/brii-inline-0.6.8.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.6: the command protocol is now `inline-commands-v5`, and an older bridge is rejected.
 
 To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
 
