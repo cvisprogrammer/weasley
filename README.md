@@ -15,19 +15,19 @@ npm run build
 npm run cloud
 ```
 
-Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.3**.
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.4**.
 
 Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
 
 ```text
-Hi David, //a casual greeting//
+Hi David, ;;a casual greeting;;
 ```
 
-Typing the closing `//` executes immediately. **When the command shares a logical line with text, the entire line is rewritten, including text before and after the command.** Adjacent lines/paragraphs are never part of the target. If you edit the target line while waiting, Brii cancels that result. Continue on a new line instead. A command on its own line still inserts only at the command location; `//...//` remains continuation-only. Alternatively:
+Typing the closing `;;` executes immediately. **When the command shares a logical line with text, the entire line is rewritten, including text before and after the command.** Adjacent lines/paragraphs are never part of the target. If you edit the target line while waiting, Brii cancels that result. Continue on a new line instead. A command on its own line still inserts only at the command location; `;;...;;` remains continuation-only. Alternatively:
 
 ```text
 Hi David,
-//a casual greeting
+;;a casual greeting
 ```
 
 Press **Enter at the end of the command line** to execute. Ordinary fields also start a new line; Lexical-based composers keep the cursor on the command line, so use Shift+Enter for a newline. Brii consumes that Enter so normal host send/submit handlers do not receive it. Another Enter while pending is consumed too. **Shift+Enter** inserts a newline without execution; **Escape** cancels pending work and keeps the command. Ordinary **Undo** restores the marked command after insertion. Pasting a command does not auto-execute; press Enter to run it.
@@ -35,10 +35,18 @@ Press **Enter at the end of the command line** to execute. Ordinary fields also 
 For sentence completion:
 
 ```text
-Sorry to hear about //...//
+Sorry to hear about ;;...;;
 ```
 
-Commands must begin at the start of a line or after whitespace. Ordinary single slashes and URL protocol slashes remain literal. To write a command-looking literal, use `\//` instead of `//`. If a host editor has its own conflicting slash behavior, compatibility needs testing. This branch does not run automatic Space-triggered typo correction.
+Commands must begin at the start of a line or after whitespace. Only your selected marker executes; single characters, URLs and other markers remain literal. A backslash immediately before the opening marker makes it literal too. This branch does not run automatic Space-triggered typo correction.
+
+## Choose the trigger
+
+In the Brii popup, choose **Command trigger**: `;;` (the new default), `//`, `--`, or two backslashes. All four use the same marker to open/close a command and support Enter execution and `...` continuation. Choose `;;` in Gmail to avoid its first-slash Gemini shortcut. Choices are shared across allowed sites; this version does not have per-site overrides or arbitrary custom markers.
+
+The extension saves your choice locally and updates attached editors immediately, cancelling pending commands when settings change. Existing installations without a saved trigger now use `;;`; select `//` to restore the old syntax. The extension playground uses the same setting. The standalone localhost playground has its own selector, remembered in that browser's local storage.
+
+Updating from 0.6.3 only needs a build, extension reload and page refresh; the bridge protocol is unchanged.
 
 ## Scope and privacy
 
@@ -65,14 +73,14 @@ Version 0.6.3 reads visible source messages in the reply editor's enclosing Gmai
 Allow `https://mail.google.com` in Brii, open an email, click Reply, and type this on a line of its own:
 
 ```text
-//summarize this email, restate it, and think of a good response
+;;summarize this email, restate it, and think of a good response
 ```
 
-Press Enter, or finish with `//`. The output replaces the command in your draft; it does not change the source email or send a reply. Undo restores the command. An instruction beside existing text still rewrites that line only.
+Press Enter, or finish with `;;` (or your selected marker). The output replaces the command in your draft; it does not change the source email or send a reply. Undo restores the command. An instruction beside existing text still rewrites that line only.
 
 Source context is a separate untrusted `emailContext` field. It includes the visible subject and message bodies, excludes other editable drafts, hidden/private content and unrelated page regions, and is capped at 8,000 characters, retaining the latest end when truncated. Collapsed messages, hidden “…” quotes, attachments and unrendered email text are unavailable: expand them before running the command. Gmail selectors are best effort; live Gmail and model summary/reply quality have not been verified here. The browser regression uses a Gmail-shaped DOM and explicit provider fixture, while bridge tests verify the actual OpenAI payload.
 
-Restart `npm run cloud` after upgrading, reload the extension and refresh Gmail. This feature uses the existing GPT-4.1 cloud bridge: source email text is sent to OpenAI on an explicit command in enabled/allowed Gmail, not during normal typing.
+When upgrading from a version older than 0.6.3, restart `npm run cloud`; reload the extension and refresh Gmail after any update. This feature uses the existing GPT-4.1 cloud bridge: source email text is sent to OpenAI on an explicit command in enabled/allowed Gmail, not during normal typing.
 
 ## Build and checks
 
@@ -91,7 +99,7 @@ npm run package
 
 Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
 
-The prebuilt package is `artifacts/brii-inline-0.6.3.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.3: the command protocol is now `inline-commands-v3`, and an older bridge is rejected.
+The prebuilt package is `artifacts/brii-inline-0.6.4.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.3: the command protocol is now `inline-commands-v3`, and an older bridge is rejected.
 
 To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
 

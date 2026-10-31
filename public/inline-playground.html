@@ -1,10 +1,11 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Brii · Inline commands</title><link rel="stylesheet" href="style.css"><body class="cloud-playground">
 <h1>Brii <small>Inline commands · experimental</small></h1>
-<p>Type <code>//a friendly greeting//</code> to run on the closing slashes, or type <code>//a friendly greeting</code> and press Enter. <code>//...//</code> continues the sentence. Shift+Enter inserts a newline. Escape cancels a pending command. Ordinary Undo restores it.</p>
+<label>Command trigger <select id="commandTrigger" aria-label="Command trigger"></select></label>
+<p id="triggerHelp"></p><p>Shift+Enter inserts a newline. Escape cancels. Ordinary Undo restores the command.</p>
 <p>Instructions and nearby text from this editor go to OpenAI when you execute. The existing target line is also sent for rewrites. Your key stays in the bridge. API usage costs apply.</p>
 <output id="bridgeStatus" role="status">Checking bridge…</output>
 <label><input type="checkbox" id="consent"> Enable cloud commands for this test</label>
-<textarea id="editor" aria-label="Your text" rows="9" spellcheck="false" placeholder="Hi David, //a casual greeting//"></textarea>
+<textarea id="editor" aria-label="Your text" rows="9" spellcheck="false" placeholder="Hi David, ;;a casual greeting;;"></textarea>
 <p id="status" role="status">Enable commands before sending text.</p>
-<p>Paste an example, then press Enter to execute it. Typing the closing slashes executes immediately. A command beside existing text rewrites the whole logical line. A command on its own line inserts text. //...// only continues. Editing the target line cancels a pending rewrite; you can continue on a new line. Calendar, browsing and external actions are not connected.</p>
+<p>Paste an example, then press Enter to execute it. Typing the closing marker executes immediately. A command beside existing text rewrites the whole logical line. A command on its own line inserts text. The instruction ... only continues. Editing the target line cancels a pending rewrite; you can continue on a new line. Calendar, browsing and external actions are not connected.</p>
 <script type="module" src="inline-playground.js"></script></body></html>

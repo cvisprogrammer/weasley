@@ -1,13 +1,14 @@
+import type {CommandTrigger} from './trigger';
 import type {EditorSurface} from './editor';
 export interface InlineCommand {emailContext?:string;start:number;end:number;instruction:string;mode:'write'|'continue'|'rewrite-line';scope:'command'|'line';lineText:string;before:string;after:string;prefix:string;}
 // A command starts at a line/word boundary; URL protocol slashes are never delimiters.
-export function commandAt(value:string,caret:number,trigger:'close'|'enter'):InlineCommand|undefined {
+export function commandAt(value:string,caret:number,trigger:'close'|'enter',marker:CommandTrigger='//'):InlineCommand|undefined {
  if(caret<0||caret>value.length)return;
  if(trigger==='enter'&&caret<value.length&&value[caret]!=='\n')return;
  const lineStart=value.lastIndexOf('\n',caret-1)+1,line=value.slice(lineStart,caret);let found:InlineCommand|undefined;
  for(let open=0;open<line.length-1;open++){
-  if(line.slice(open,open+2)!=='//'||(open>0&&!/\s/.test(line[open-1])))continue;
-  let close=-1;for(let i=open+2;i<line.length-1;i++)if(line.slice(i,i+2)==='//'&&![':', '\\'].includes(line[i-1])){close=i;break;}
+  if(line.slice(open,open+2)!==marker||(open>0&&!/\s/.test(line[open-1])))continue;
+  let close=-1;for(let i=open+2;i<line.length-1;i++)if(line.slice(i,i+2)===marker&&(marker!=='//'||![':', '\\'].includes(line[i-1]))){close=i;break;}
   const end=close<0?line.length:close+2,instruction=line.slice(open+2,close<0?line.length:close).trim();
   if(instruction&&(trigger==='enter'||close>=0&&end===line.length)){
    const markerStart=lineStart+open,markerEnd=lineStart+end,nextBreak=value.indexOf('\n',caret),lineEnd=nextBreak<0?value.length:nextBreak;
@@ -20,7 +21,7 @@ export function commandAt(value:string,caret:number,trigger:'close'|'enter'):Inl
  return found;
 }
 export interface CommandReply {text:string;model?:string;totalMs?:number;}
-interface Options {context?:()=>string;active:()=>boolean;ready:()=>boolean;trustedOnly?:boolean;run:(command:InlineCommand,signal:AbortSignal)=>Promise<CommandReply>;status:(message:string)=>void;}
+interface Options {trigger?:()=>CommandTrigger;context?:()=>string;active:()=>boolean;ready:()=>boolean;trustedOnly?:boolean;run:(command:InlineCommand,signal:AbortSignal)=>Promise<CommandReply>;status:(message:string)=>void;}
 export class InlineCommands {
  private applying=false;private composing=false;private epoch=0;private pending?:{abort:AbortController;command:InlineCommand;epoch:number;caret:number};
  private listeners:{target:EventTarget;type:string;listener:EventListener;capture:boolean}[]=[];
@@ -35,7 +36,7 @@ export class InlineCommands {
    if(this.pending&&!this.matches(this.pending.command))this.invalidate(this.pending.command.scope==='line'?'Target line changed; rewrite cancelled. Finish the line and press Enter to retry.':'Command edited or undone; result cancelled.');
    if(this.composing||event.isComposing)return;
    // Pasting instructions does not execute them. Enter explicitly executes pasted commands.
-   if(event.inputType==='insertText'&&event.data==='/'&&editor.selectionStart===editor.selectionEnd){const command=commandAt(editor.value,editor.selectionStart,'close');if(command)this.execute(command);}
+   if(event.inputType==='insertText'&&event.data===(this.options.trigger?.()||'//')[1]&&editor.selectionStart===editor.selectionEnd){const command=commandAt(editor.value,editor.selectionStart,'close',this.options.trigger?.());if(command)this.execute(command);}
   });
  }
  invalidate(message='Pending command cancelled.'){this.epoch++;this.pending?.abort.abort();this.pending=undefined;this.options.status(message);}
@@ -46,7 +47,7 @@ export class InlineCommands {
   if(event.key==='Escape'&&this.pending){event.preventDefault();event.stopImmediatePropagation();this.invalidate('Command cancelled. Original command kept.');return;}
   if(event.key!=='Enter'||event.shiftKey||event.ctrlKey||event.metaKey||event.altKey||this.editor.selectionStart!==this.editor.selectionEnd)return;
   if(this.pending){event.preventDefault();event.stopImmediatePropagation();this.options.status('Command is still running. Shift+Enter inserts a newline; Escape cancels.');return;}
-  const command=commandAt(this.editor.value,this.editor.selectionStart,'enter');if(!command)return;
+  const command=commandAt(this.editor.value,this.editor.selectionStart,'enter',this.options.trigger?.());if(!command)return;
   event.preventDefault();event.stopImmediatePropagation();this.execute(command,true);
  }
  private execute(command:InlineCommand,newline=false){

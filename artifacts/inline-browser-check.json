@@ -18,5 +18,10 @@
   "disableStopsExistingController": true,
   "richEnterPreservesFormattingParagraphAndCaret": true,
   "multilineRichInsertionAndUndo": true,
-  "syntheticEventsCannotSpend": true
+  "syntheticEventsCannotSpend": true,
+  "everySelectedMarkerClosesOrEntersAndUndoes": true,
+  "standaloneMarkerPersists": true,
+  "liveSettingsSwitchDisablesOldMarker": true,
+  "markerChangeCancelsPendingCommand": true,
+  "popupSelectPersistsWithoutChangingConsent": true
 }

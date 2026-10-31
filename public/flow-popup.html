@@ -1,7 +1,8 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Brii · Inline commands</title><link rel="stylesheet" href="style.css"><body>
 <h1>Brii <small>Inline commands · experiment</small></h1>
-<p>Execute <code>//instruction//</code> on closing slashes, or <code>//instruction</code> with Enter. <code>//...//</code> continues a sentence. Shift+Enter inserts a newline; Escape cancels.</p>
-<p>Commands beside existing text rewrite that whole line; commands on their own line insert. <code>//...//</code> only continues.</p>
+<label>Command trigger <select id="commandTrigger" aria-label="Command trigger"></select></label>
+<p id="triggerHelp"></p><p>Shift+Enter inserts a newline; Escape cancels.</p>
+<p>Commands beside existing text rewrite that whole line; commands on their own line insert. The continuation instruction <code>...</code> only continues.</p>
 <p>Your instruction, target line and nearby editor text are sent to OpenAI. In Gmail, commands also include up to 8,000 characters of the visible email thread or your reply’s quoted original. Expand quoted text first if it is hidden. The API key stays in your local bridge. API usage costs apply. Nothing is automatically sent or booked.</p>
 <label><input id="enabled" type="checkbox"> Enable cloud commands</label>
 <button id="allow">Allow this website</button> <button id="try">Try Brii</button>

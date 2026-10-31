@@ -1,4 +1,5 @@
 import {InlineCommands,commandTransport} from './brii/commands';
+import {selectedTrigger} from './brii/trigger';
 import {gmailContext} from './brii/gmail-context';
 import {PlainEditor,RichEditor} from './brii/editor';
 import {extensionTransport} from './brii/cloud-client';
@@ -15,10 +16,10 @@ if(!global.__briiCommands){
  function attach(target:Element|null){
   if(!active())return;const element=safeField(target)?target:richHost(target);
   if(!element){if(target instanceof HTMLInputElement||target instanceof HTMLTextAreaElement||target instanceof HTMLElement&&target.isContentEditable)show('This field is excluded.');return;}
-  show('Ready · //instruction// or //instruction then Enter');if(known.has(element))return;
+  const marker=selectedTrigger(config?.commandTrigger);show(`Ready · ${marker}instruction${marker} or ${marker}instruction then Enter`);if(known.has(element))return;
   for(const item of controllers)if(!item.element.isConnected){item.flow.dispose();known.delete(item.element);controllers.delete(item);}
   known.add(element);const plain=safeField(element);
-  const flow=new InlineCommands(plain?new PlainEditor(element):new RichEditor(element),element,{active:()=>active()&&(plain?safeField(element):richHost(element)===element),ready:active,trustedOnly:true,context:()=>gmailContext(element),run:commandTransport(extensionTransport),status:show});controllers.add({element,flow});
+  const flow=new InlineCommands(plain?new PlainEditor(element):new RichEditor(element),element,{active:()=>active()&&(plain?safeField(element):richHost(element)===element),ready:active,trustedOnly:true,trigger:()=>selectedTrigger(config?.commandTrigger),context:()=>gmailContext(element),run:commandTransport(extensionTransport),status:show});controllers.add({element,flow});
  }
  document.addEventListener('focusin',event=>{if(event.isTrusted)attach(event.target as Element);},true);
  void cloudSettings().then(settings=>{config=settings;attach(document.activeElement);});

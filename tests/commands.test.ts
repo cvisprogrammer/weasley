@@ -18,3 +18,14 @@ test('line rewrites include both sides of the command and exclude adjacent parag
  const command=commandAt(value,caret,'close')!;assert.equal(command.mode,'rewrite-line');assert.equal(command.lineText,'Old prefix  old suffix');assert.equal(command.before,'Before.\n');assert.equal(command.after,'\nAfter.');assert.equal(value.slice(command.start,command.end),'Old prefix //make warmer// old suffix');
  const own='Before.\n//a greeting//\nAfter.';const insertion=commandAt(own,own.indexOf('\nAfter.'),'close')!;assert.equal(insertion.mode,'write');assert.equal(insertion.scope,'command');assert.equal(insertion.before,'Before.\n');
 });
+
+test('selected markers support close, Enter, continuation and line scope without activating other markers',()=>{
+ for(const marker of [';;','//','--','\\\\'] as const){
+  const line=`Before.\nHi ${marker}make warmer${marker}\nAfter.`,caret=line.indexOf('\nAfter.');
+  const result=commandAt(line,caret,'close',marker)!;assert.equal(result.instruction,'make warmer');assert.equal(result.lineText,'Hi ');assert.equal(result.before,'Before.\n');assert.equal(result.after,'\nAfter.');
+  const open=marker+'a greeting';assert.equal(commandAt(open,open.length,'enter',marker)!.mode,'write');assert.equal(commandAt(open,open.length,'close',marker),undefined);
+  const completion='Sorry '+marker+'...'+marker;assert.equal(commandAt(completion,completion.length,'close',marker)!.mode,'continue');
+  for(const literal of [marker[0]+'text',marker+marker,'word'+marker+'text'+marker,'https://example.com'])assert.equal(commandAt(literal,literal.length,'enter',marker),undefined);
+  for(const other of [';;','//','--','\\\\'] as const)if(other!==marker){const text=other+'instruction'+other;assert.equal(commandAt(text,text.length,'enter',marker),undefined);}
+ }
+});
