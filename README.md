@@ -15,7 +15,7 @@ npm run build
 npm run cloud
 ```
 
-Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.0**.
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.1**.
 
 Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
 
@@ -23,7 +23,7 @@ Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then
 Hi David, //a casual greeting//
 ```
 
-Typing the closing `//` executes immediately. You can keep typing afterward while waiting; only the marked command is replaced. Alternatively:
+Typing the closing `//` executes immediately. **When the command shares a logical line with text, the entire line is rewritten, including text before and after the command.** Adjacent lines/paragraphs are never part of the target. If you edit the target line while waiting, Brii cancels that result. Continue on a new line instead. A command on its own line still inserts only at the command location; `//...//` remains continuation-only. Alternatively:
 
 ```text
 Hi David,
@@ -44,9 +44,9 @@ Commands must begin at the start of a line or after whitespace. Ordinary single 
 
 This prototype drafts text and continues sentences. It does not send messages, browse, read calendars, choose verified free times, or create events. Common calendar/availability requests are rejected before inference with an explicit not-connected message and remain in the editor. The model has no tools and is instructed to reject other tasks needing unavailable external access. No calendar access or OAuth permission was added.
 
-On enabled/allowed sites, executing a command sends up to 600 instruction characters plus up to 1200 preceding and 400 following characters from the same editor to OpenAI through the loopback helper. There is no webpage harvesting. Instructions are separate from quoted editor context. The API key stays in the helper, requests use `store:false`, and API usage costs apply. This does not imply zero provider retention. No command text is logged or persistently saved by Brii.
+On enabled/allowed sites, executing a command sends up to 600 instruction characters, the target line for rewrites (up to 1600 characters, with command markers removed), plus up to 1200 preceding and 400 following characters from the same editor to OpenAI through the loopback helper. There is no webpage harvesting. Instructions are separate from quoted editor context. The API key stays in the helper, requests use `store:false`, and API usage costs apply. This does not imply zero provider retention. No command text is logged or persistently saved by Brii.
 
-Native editing preserves text outside the command, selection/caret, and Undo. Standard contenteditable editors are experimental; embedded objects and unsupported command markup are skipped. Google Docs is unsupported. Actual live ChatGPT/Gmail/Wikipedia compatibility and generation quality are not verified here. In particular, fixture tests validate host bubble-handler interception, not every site's earlier window/document capture handlers. Review drafts before sending.
+Native editing preserves text outside the target line or insertion span, selection/caret, and Undo. A line means a newline-delimited line or rich-text paragraph, not a visual wrap. When triggered in the middle of the target line, the caret moves to the end of the rewritten text. Standard contenteditable editors are experimental; embedded objects and unsupported command markup are skipped. Google Docs is unsupported. Actual live ChatGPT/Gmail/Wikipedia compatibility and generation quality are not verified here. In particular, fixture tests validate host bubble-handler interception, not every site's earlier window/document capture handlers. Review drafts before sending.
 
 ## Build and checks
 
@@ -63,7 +63,7 @@ npm run package
 
 Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
 
-The prebuilt package is `artifacts/brii-inline-0.6.0.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after switching branches because the command endpoint is new.
+The prebuilt package is `artifacts/brii-inline-0.6.1.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.1: the command protocol is now `inline-commands-v2`, and an older bridge is rejected.
 
 To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
 
