@@ -14,5 +14,9 @@
   "nearEditorContextPrioritizedWithoutSiteAdapter": true,
   "formLayoutReadsSourceTextWithoutFieldValues": true,
   "siteRefinementsNeverGateGenericFallback": true,
-  "emptyComposerDialogDoesNotBorrowUnrelatedMain": true
+  "emptyComposerDialogDoesNotBorrowUnrelatedMain": true,
+  "topLevelComposerIncludesCommentsBelowWithAuthors": true,
+  "namedCommentAndBodyReachActualProviderPayload": true,
+  "namedAuthorPrioritizedBeyondNormalExcerptBudget": true,
+  "directReplyContextIdentifiesAuthor": true
 }

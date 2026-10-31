@@ -15,7 +15,7 @@ npm run build
 npm run cloud
 ```
 
-Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.6**.
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.7**.
 
 Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
 
@@ -86,7 +86,7 @@ When upgrading to 0.6.6, restart `npm run cloud`; reload the extension and refre
 
 Version 0.6.6 uses **Include visible page/thread context** in the popup, enabled by default, across all allowed websites. It applies only on already enabled/allowed websites and only when you execute a command. Turning it off cancels pending commands and disables external source context for both webpages and Gmail; ordinary before/after editor context remains.
 
-- **Hacker News:** post title/text, the comment being replied to, and its ancestor comments based on thread indentation. Supports the separate `/reply` page. Sibling replies are excluded.
+- **Hacker News:** post title/text, the comment being replied to, and its ancestor comments based on thread indentation, with author labels. Supports the separate `/reply` page. The story-level composer above the discussion includes an excerpt of visible comments below it. An author named in your instruction is prioritized before the normal excerpt, including beyond the initial budget window. Direct replies still exclude unreferenced sibling comments.
 - **Reddit:** post title/body and the enclosing comment/ancestor chain, with adapters for modern light-DOM `shreddit-*` markup and old Reddit. Feed views without an identifiable single post are not treated as an entire thread.
 - **Every allowed website:** generic extraction needs no site-specific integration. It prefers a nearby article/main region or active dialog, then a conversation/card around the editor, then a single article/main region, and finally filtered visible body text. Form-based layouts are supported while field values, editable drafts, hidden/private content, navigation, sidebars and controls are excluded. An empty active dialog does not borrow another open thread. Reddit/HN/Gmail readers are optional refinements; if they find no source, the same generic fallback is available.
 
@@ -99,6 +99,8 @@ Allow the site in Brii, click Reply, and type on a line of its own:
 The separate `pageDomain` field identifies the current hostname, while `pageContext` includes up to 8,000 characters, prioritizing the direct comment over ancestor context. The prompt treats source text as untrusted data and instructions as a separate field. It may use the source for drafting but is told not to follow instructions embedded in it. Source posts/comments are never edited. Results replace only the command or the existing target line and remain reversible with Undo.
 
 This reads rendered DOM text only: it does not follow links, fetch linked articles, load more comments, open collapsed text, inspect other tabs, read images/attachments, or traverse shadow-root editors. Site adapters are best effort and need live retesting as markup changes. Browser tests use Reddit/HN-shaped DOM fixtures and the real local bridge with an explicit provider fixture; live site compatibility and model response quality have not been measured. The standalone playground sends its own hostname and editor text rather than another webpage. No broad all-sites permission is added: allow each website as before. Generic extraction is best effort, not a guarantee that every custom editor or every page layout works.
+
+Version 0.6.7 fixes story-level HN context: a title alone previously prevented comment extraction, and direct replies omitted author names. For example, `;;respond to ataru's point about different Casio models;;` now prioritizes the rendered comment by ataru, including its author and body. The 8,000-character total remains an excerpt, not a complete discussion export; hidden or unrendered comments remain unavailable. Tests include the supplied Casio paragraph and check the actual bridge/provider payload with an explicit provider fixture. This fixes extraction, not a measured guarantee of model response quality. Updating from 0.6.6 needs build/reload/page refresh only; the v5 bridge protocol is unchanged.
 
 ## Build and checks
 
@@ -118,7 +120,7 @@ npm run package
 
 Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
 
-The prebuilt package is `artifacts/brii-inline-0.6.6.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.6: the command protocol is now `inline-commands-v5`, and an older bridge is rejected.
+The prebuilt package is `artifacts/brii-inline-0.6.7.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.6: the command protocol is now `inline-commands-v5`, and an older bridge is rejected.
 
 To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
 

@@ -21,7 +21,7 @@ export function commandAt(value:string,caret:number,trigger:'close'|'enter',mark
  return found;
 }
 export interface CommandReply {text:string;model?:string;totalMs?:number;}
-interface Options {source?:()=>Pick<InlineCommand,'emailContext'|'pageContext'|'pageDomain'>;trigger?:()=>CommandTrigger;active:()=>boolean;ready:()=>boolean;trustedOnly?:boolean;run:(command:InlineCommand,signal:AbortSignal)=>Promise<CommandReply>;status:(message:string)=>void;}
+interface Options {source?:(command:InlineCommand)=>Pick<InlineCommand,'emailContext'|'pageContext'|'pageDomain'>;trigger?:()=>CommandTrigger;active:()=>boolean;ready:()=>boolean;trustedOnly?:boolean;run:(command:InlineCommand,signal:AbortSignal)=>Promise<CommandReply>;status:(message:string)=>void;}
 export class InlineCommands {
  private applying=false;private composing=false;private epoch=0;private pending?:{abort:AbortController;command:InlineCommand;epoch:number;caret:number};
  private listeners:{target:EventTarget;type:string;listener:EventListener;capture:boolean}[]=[];
@@ -56,7 +56,7 @@ export class InlineCommands {
   if(command.lineText.length>1600){this.options.status('Keep a rewrite line under 1600 characters.');return;}
   if(command.instruction.length>600){this.options.status('Keep the instruction under 600 characters.');return;}
   if(!this.editor.canReplace(command.start,command.end)){this.options.status('Command contains unsupported formatting or embedded content.');return;}
-  const {emailContext,pageContext,pageDomain}=this.options.source?.()||{};command={...command,...(emailContext?{emailContext}:{}),...(pageContext?{pageContext}:{}),...(pageDomain?{pageDomain}:{})};
+  const {emailContext,pageContext,pageDomain}=this.options.source?.(command)||{};command={...command,...(emailContext?{emailContext}:{}),...(pageContext?{pageContext}:{}),...(pageDomain?{pageDomain}:{})};
   let newlineInserted=false;if(newline){this.applying=true;try{newlineInserted=this.editor.insertText('\n',true);}finally{this.applying=false;}}
   const state={abort:new AbortController(),command,epoch:this.epoch,caret:this.editor.selectionStart};this.pending=state;
   this.options.status((command.scope==='line'?'Rewriting this line… editing it cancels. Other lines stay unchanged. Escape cancels.':'Running command… keep typing. Escape cancels.')+(emailContext?' Using visible Gmail thread ('+emailContext.length+' characters).':'')+(pageContext?' Using webpage context ('+pageContext.length+' characters).':'')+(newline&&!newlineInserted?' Enter runs the command here; use Shift+Enter for a newline.':''));

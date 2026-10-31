@@ -17,22 +17,32 @@ function text(root:HTMLElement|undefined|null,limit:number,editor?:HTMLElement):
  return root?read(root).replace(/\n{3,}/g,'\n\n').trim():'';
 }
 function one(scope:ParentNode,selector:string){return [...scope.querySelectorAll<HTMLElement>(selector)].filter(visible);}
-export function webpageContext(editor:HTMLElement):string{
+export function webpageContext(editor:HTMLElement,instruction=''):string{
  const chunks:string[]=[];
  const add=(label:string,element:HTMLElement|null|undefined,limit:number)=>{const value=text(element,limit,editor);if(value)chunks.push(label+':\n'+value);};
  if(location.hostname==='news.ycombinator.com'){
   const rows=one(document,'tr.comtr');let target=editor.closest<HTMLElement>('tr.comtr');
   if(!target&&(location.pathname==='/reply'||editor.closest('.comment-tree')))
    target=rows.filter(row=>!!(row.compareDocumentPosition(editor)&Node.DOCUMENT_POSITION_FOLLOWING)).at(-1)||null;
+  const included=new Set<HTMLElement>();
+  const author=(row:HTMLElement)=>text(row.querySelector<HTMLElement>('.hnuser'),60,editor);
+  const addComment=(label:string,row:HTMLElement,limit:number)=>{if(included.has(row))return;included.add(row);const name=author(row);add(label+(name?' (by '+name+')':''),row.querySelector<HTMLElement>('.commtext'),limit);};
+  // Explicitly referenced authors take priority even beyond the initial page excerpt.
+  const words=new Set(instruction.toLowerCase().match(/[a-z0-9_-]+/g)||[]);
+  for(const row of rows){const name=author(row);if(name&&words.has(name.toLowerCase()))addComment(row===target?'Comment being replied to':'Referenced comment',row,2000);}
   if(target){
-   add('Comment being replied to',target.querySelector<HTMLElement>('.commtext'),3200);
+   addComment('Comment being replied to',target,3200);
    let indent=Number(target.querySelector('.ind img')?.getAttribute('width')||0);
    const ancestors:HTMLElement[]=[];
    for(let index=rows.indexOf(target)-1;index>=0&&ancestors.length<4;index--){const row=rows[index],width=Number(row.querySelector('.ind img')?.getAttribute('width')||0);if(width<indent){ancestors.push(row);indent=width;}}
-   for(const row of ancestors)add('Ancestor comment (nearest first)',row.querySelector<HTMLElement>('.commtext'),900);
+   for(const row of ancestors)addComment('Ancestor comment (nearest first)',row,900);
   }
   add('Post title',document.querySelector<HTMLElement>('.fatitem .titleline'),400);
   add('Post text',document.querySelector<HTMLElement>('.fatitem .toptext'),2000);
+  if(!target){
+   // The story's top-level composer sits above the discussion, not inside a comment.
+   for(const row of rows){addComment('Visible discussion excerpt',row,1200);if(chunks.join('\n\n').length>=PAGE_CONTEXT_LIMIT)break;}
+  }
  }else if(/(^|\.)reddit\.com$/.test(location.hostname)){
   const selector='shreddit-comment,.thing.comment,[data-testid="comment"]';
   let comment=editor.closest<HTMLElement>(selector);
