@@ -153,3 +153,20 @@ All conditions receive identical raw text/context, without the current draft or 
 Outputs and latency ranges/medians go to the terminal and ignored files `artifacts/cloud-model-benchmark.local.json` and `.local.md`. These do not overwrite the previously tracked benchmark file or affect Git pulls. Review wording, contractions, negation, unusual phrases, and unfinished endings manually. Three repeats help expose inconsistency but still do not establish general accuracy. The runner does not report an automatic semantic score.
 
 `npm run benchmark:models -- --dry-run` lists the cases/conditions/request count without a key or API calls. This workspace has no API key, so live quality and latency for these new comparisons are not measured here. Model/prompt requests, repeat ordering, error handling, and report formatting are verified with explicit provider fixtures.
+
+## Compare reasoning effort and discover newer API models
+
+```sh
+# Lists GPT-5/GPT-6 family IDs returned by your key; no inference calls:
+npm run benchmark:models -- --list-models
+# GPT-5 minimal vs low vs medium, same reconstruction prompt and input (12 requests):
+npm run benchmark:models -- --reasoning
+# If the model is available to your account, test GPT-6 low vs medium (8 requests):
+BRII_TEST_MODEL=gpt-6-sol npm run benchmark:models -- --reasoning
+```
+
+Add `--repeats=3` to repeat every case/condition three times, or `--dry-run` to inspect the plan without API calls. `--efforts=low,medium` explicitly selects effort levels in reasoning mode. Actual supported levels depend on the model; an API error is reported, never silently replaced with another setting or model. GPT-5 defaults to minimal/low/medium; other candidate IDs default to low/medium. Production editing is unchanged.
+
+Reasoning comparisons use **4096 output tokens for every condition**, including the repeated minimal control, because reasoning shares the output-token budget. Earlier three-way model tests still use 1500; compare efforts within the new run for fair budgeting. Each row records requested/returned model IDs, reasoning effort, output budget, latency, and token usage when returned. Incomplete responses are rejected, with the reason recorded. Higher effort can increase both latency and cost. Reports use ignored, per-model paths such as `artifacts/cloud-reasoning-gpt-5.local.json` and `.local.md`, preserving reports for different models.
+
+GPT-6 family IDs are listed in OpenAI's official [ChatModel SDK type](https://github.com/openai/openai-python/blob/main/src/openai/types/shared/chat_model.py), which is included by the [ResponsesModel type](https://github.com/openai/openai-python/blob/main/src/openai/types/shared/responses_model.py). Examples include `gpt-6-sol`, `gpt-6-astra` and `gpt-6-luna`; this is not a claim that the bare ID `gpt-6` exists or that your key can generate with every listed model. The model-list command checks what your key sees; the benchmark tests actual generation. Listing permissions and generation permissions can differ. No key is configured in this workspace, so GPT-6 generation and higher-effort quality are not verified here.
