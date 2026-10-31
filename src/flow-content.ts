@@ -1,4 +1,5 @@
 import {InlineCommands,commandTransport} from './brii/commands';
+import {gmailContext} from './brii/gmail-context';
 import {PlainEditor,RichEditor} from './brii/editor';
 import {extensionTransport} from './brii/cloud-client';
 import {cloudSettings,cloudFrameAllowed,type CloudSettings} from './brii/cloud';
@@ -17,7 +18,7 @@ if(!global.__briiCommands){
   show('Ready · //instruction// or //instruction then Enter');if(known.has(element))return;
   for(const item of controllers)if(!item.element.isConnected){item.flow.dispose();known.delete(item.element);controllers.delete(item);}
   known.add(element);const plain=safeField(element);
-  const flow=new InlineCommands(plain?new PlainEditor(element):new RichEditor(element),element,{active:()=>active()&&(plain?safeField(element):richHost(element)===element),ready:active,trustedOnly:true,run:commandTransport(extensionTransport),status:show});controllers.add({element,flow});
+  const flow=new InlineCommands(plain?new PlainEditor(element):new RichEditor(element),element,{active:()=>active()&&(plain?safeField(element):richHost(element)===element),ready:active,trustedOnly:true,context:()=>gmailContext(element),run:commandTransport(extensionTransport),status:show});controllers.add({element,flow});
  }
  document.addEventListener('focusin',event=>{if(event.isTrusted)attach(event.target as Element);},true);
  void cloudSettings().then(settings=>{config=settings;attach(document.activeElement);});

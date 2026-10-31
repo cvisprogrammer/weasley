@@ -15,7 +15,7 @@ npm run build
 npm run cloud
 ```
 
-Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.2**.
+Reload the existing extension in `chrome://extensions` if it loads this checkout's `dist` folder. For a new installation choose Load unpacked → `dist`. The stable extension identity and existing website grants are preserved. Refresh the entire test tab after updating. The popup now says **Inline commands** and the manifest version is **0.6.3**.
 
 Open `http://127.0.0.1:3001/` or click **Try Brii**. Enable cloud commands, then type:
 
@@ -44,7 +44,7 @@ Commands must begin at the start of a line or after whitespace. Ordinary single 
 
 This prototype drafts text and continues sentences. It does not send messages, browse, read calendars, choose verified free times, or create events. Common calendar/availability requests are rejected before inference with an explicit not-connected message and remain in the editor. The model has no tools and is instructed to reject other tasks needing unavailable external access. No calendar access or OAuth permission was added.
 
-On enabled/allowed sites, executing a command sends up to 600 instruction characters, the target line for rewrites (up to 1600 characters, with command markers removed), plus up to 1200 preceding and 400 following characters from the same editor to OpenAI through the loopback helper. There is no webpage harvesting. Instructions are separate from quoted editor context. The API key stays in the helper, requests use `store:false`, and API usage costs apply. This does not imply zero provider retention. No command text is logged or persistently saved by Brii.
+On enabled/allowed sites, executing a command sends up to 600 instruction characters, the target line for rewrites (up to 1600 characters, with command markers removed), plus up to 1200 preceding and 400 following characters from the same editor to OpenAI through the loopback helper. In Gmail, commands additionally include up to 8,000 characters from the visible thread associated with the reply editor or its own quoted original, collected only on command execution. Other sites do not collect page context. Instructions are separate from quoted editor/email context. The API key stays in the helper, requests use `store:false`, and API usage costs apply. This does not imply zero provider retention. No command text is logged or persistently saved by Brii.
 
 Native editing preserves text outside the target line or insertion span, selection/caret, and Undo. A line means a newline-delimited line or rich-text paragraph, not a visual wrap. When triggered in the middle of the target line, the caret moves to the end of the rewritten text. Standard contenteditable editors are experimental; embedded objects and unsupported command markup are skipped. Google Docs is unsupported. Actual live ChatGPT/Gmail/Wikipedia compatibility and generation quality are not verified here. In particular, fixture tests validate host bubble-handler interception, not every site's earlier window/document capture handlers. Review drafts before sending.
 
@@ -56,7 +56,23 @@ A real Lexical 0.53.0 fixture reproduces the former “Editor rejected insertion
 
 Live Facebook/Messenger has not been tested here and may use a different Lexical version or additional handlers. Formatting within a rewritten Lexical line follows the host's native plain-text insertion behavior. Only one-paragraph generated rewrites are supported there; a requested multiline result is rejected before selecting/replacing text. Enter executes the command without synthesizing a paragraph event; Shift+Enter invokes the host's normal newline behavior. Generic rich editors retain their existing multiline support.
 
-After updating, run `npm ci` to install the new test dependencies, build, reload Brii and refresh the Facebook tab. No bridge restart is required for this frontend-only fix; the existing v2 command protocol is unchanged.
+For the Lexical fix itself, build, reload Brii and refresh the Facebook tab. Version 0.6.3 also changes the bridge protocol for email context, so restart the bridge when upgrading to this version.
+
+## Gmail reply context
+
+Version 0.6.3 reads visible source messages in the reply editor's enclosing Gmail conversation, regardless of whether they appear above or below your draft. Popout composers use their own visible quoted original when available; they do not borrow an unrelated open thread. No Gmail API, OAuth, inbox scan, attachment reading, or automatic expansion is involved.
+
+Allow `https://mail.google.com` in Brii, open an email, click Reply, and type this on a line of its own:
+
+```text
+//summarize this email, restate it, and think of a good response
+```
+
+Press Enter, or finish with `//`. The output replaces the command in your draft; it does not change the source email or send a reply. Undo restores the command. An instruction beside existing text still rewrites that line only.
+
+Source context is a separate untrusted `emailContext` field. It includes the visible subject and message bodies, excludes other editable drafts, hidden/private content and unrelated page regions, and is capped at 8,000 characters, retaining the latest end when truncated. Collapsed messages, hidden “…” quotes, attachments and unrendered email text are unavailable: expand them before running the command. Gmail selectors are best effort; live Gmail and model summary/reply quality have not been verified here. The browser regression uses a Gmail-shaped DOM and explicit provider fixture, while bridge tests verify the actual OpenAI payload.
+
+Restart `npm run cloud` after upgrading, reload the extension and refresh Gmail. This feature uses the existing GPT-4.1 cloud bridge: source email text is sent to OpenAI on an explicit command in enabled/allowed Gmail, not during normal typing.
 
 ## Build and checks
 
@@ -66,6 +82,7 @@ npm test
 npm run build
 npm run test:inline-browser
 npm run test:lexical-browser
+npm run test:gmail-context-browser
 npm run test:cloud-browser
 npm run test:rich-browser
 npm run test:brii-browser
@@ -74,7 +91,7 @@ npm run package
 
 Browser checks use a real loopback bridge and native browser editing with an explicit fake provider; Chrome extension RPC is simulated because unpacked installation is blocked by workspace policy. No API key is configured in this workspace, so live command inference quality/latency remain unmeasured. Checks cover both triggers, continuation, native Undo/Redo, tail typing/caret, prefix edits, Escape, IME bypass, private fields, disabled settings, unsupported tools, partial outputs, and multiline rich insertion.
 
-The prebuilt package is `artifacts/brii-inline-0.6.2.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge when moving from 0.6.0 to 0.6.1 or later: the command protocol is now `inline-commands-v2`, and an older bridge is rejected.
+The prebuilt package is `artifacts/brii-inline-0.6.3.zip`. Extract it, set the key locally, and run `node cloud-server.mjs` inside the extracted folder; load that same folder unpacked. No npm install is required for the ZIP. Model default is still GPT-4.1; `OPENAI_MODEL` overrides it. Restart the bridge after updating to 0.6.3: the command protocol is now `inline-commands-v3`, and an older bridge is rejected.
 
 To return to the decoder, stop the bridge, switch to `codex/brii-flow`, rebuild, restart, reload Chrome's extension, and refresh the page. The older cloud decoder playground on this branch is still at `/cloud-playground.html`; the local WebLLM experiment remains `npm run brii`.
 

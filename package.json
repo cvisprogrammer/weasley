@@ -1,6 +1,6 @@
 {
   "name": "weasley",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,7 +19,8 @@
     "test:cloud-browser": "node scripts/cloud-browser-check.mjs",
     "test:rich-browser": "node scripts/rich-browser-check.mjs",
     "test:inline-browser": "node scripts/inline-browser-check.mjs",
-    "test:lexical-browser": "node scripts/lexical-browser-check.mjs"
+    "test:lexical-browser": "node scripts/lexical-browser-check.mjs",
+    "test:gmail-context-browser": "node scripts/gmail-context-browser-check.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "0.2.86",

@@ -1,0 +1,10 @@
+{
+  "provider": "Explicit fixture; no live Gmail or OpenAI request tested",
+  "visibleThreadBelowEditorExcludesOtherDraftsAndHiddenText": true,
+  "commandSnapshotsThreadAtExecutionAndUndoKeepsSourceEmail": true,
+  "threadAboveEditorAlsoAvailable": true,
+  "popoutUsesOnlyOwnQuoteAndDeduplicatesNestedQuotes": true,
+  "longThreadBoundedAndLatestTextRetained": true,
+  "otherSitesNeverHarvested": true,
+  "noWholePageFallbackForUnassociatedComposer": true
+}

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Brii \u00b7 Inline commands",
-  "version": "0.6.2",
+  "name": "Brii · Inline commands",
+  "version": "0.6.3",
   "minimum_chrome_version": "120",
   "description": "Decode completed text with GPT-4.1-mini through your local bridge. Cloud processing is opt-in.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAipzJTxovUEECjqZkjrKv0qJopHvYhj16BAI+8q9ewYxfhCUGJxr5dcQoCYK6snjkelF5+ag9jn/E4XjBEqdK8uzrUnnDLe/OdrNWr/G+DS4x5WlO5EJkx1ZTiF6hg5ulzRyBHz89Jzbud1OPIzS4bbNUMAzuEyvgr0CM7NcGOkX4pyxUuyIFnpjdoNXbZZZXfSbtibTVdSTq3cIqPq4LsdkaSTFQ6qieaggzTqx0umxToHrYw+01WVBK8v/7XxOAUXKwFt/nWUrc9bWL54QnZ7UmfizV4jdfYSH5fFi2M3Tr7uVVpbCYpMzJTRGrFmsQL7J2gF6blze96/Hw9FRPfwIDAQAB",
