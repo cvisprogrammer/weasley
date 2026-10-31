@@ -69,7 +69,7 @@ npm run benchmark:cloud
 OPENAI_MODEL=gpt-4.1-mini npm run benchmark:cloud
 ```
 
-Each command makes six billable API requests: three examples, once with the original raw-only prompt and once with the draft-aware prompt. Edit `public/brii-revision-dataset.json` to add examples. It prints both outputs and end-to-end response latency, and saves `artifacts/cloud-revision-benchmark.json`. Review the wording and regressions manually; one sample is not a quality or latency distribution. Only this explicitly invoked benchmark saves its static dataset inputs/outputs; normal editing diagnostics remain transient. This workspace has no API key, so the live results are user-reported, not independently measured here.
+Each command makes six billable API requests: three examples, once with the original raw-only prompt and once with the draft-aware prompt. Edit `public/brii-revision-dataset.json` to add examples. It prints both outputs and end-to-end response latency, and saves `artifacts/cloud-revision-benchmark.local.json`. Review the wording and regressions manually; one sample is not a quality or latency distribution. Only this explicitly invoked benchmark saves its static dataset inputs/outputs; normal editing diagnostics remain transient. This workspace has no API key, so the live results are user-reported, not independently measured here.
 
 ## Preserved local experiment
 
@@ -135,3 +135,21 @@ npm run test:mail-browser
 On a Mac set `CHROME_PATH` for automated browser scripts. The tests use explicit identity/Gmail/model fixtures and a Gmail-like DOM; they validate application behavior, read-only requests, evidence checks, privacy boundaries and cleanup, **not live Gmail authorization or real-model accuracy**. Cloud Chromium blocks unpacked extensions and has no WebGPU adapter. Real Google OAuth, live Gmail layout compatibility and Mac model quality remain user-side validation steps. See [test evidence](docs/BENCHMARK.md) and [model report](docs/MODELS.md).
 
 Google restricted-scope verification/public-distribution requirements remain unresolved. No app/store publication or external email action has been performed. The current code and ZIP are a personal prototype for testing.
+
+## Compare models and the reconstruction prompt
+
+The extension stays on GPT-4.1 / raw-only while this separate experiment runs. In a terminal with `OPENAI_API_KEY` configured:
+
+```sh
+npm run benchmark:models
+# Repeat each case/condition three times (36 requests):
+npm run benchmark:models -- --repeats=3
+```
+
+The default quick run makes 12 billable requests: four cases × three conditions. It compares GPT-4.1 with the existing prompt, GPT-4.1 with a new reconstruction prompt, and GPT-5 with that identical new prompt. GPT-5 is a candidate model, not a claim about the latest model or availability on your account; it uses `reasoning.effort=minimal` for a low-latency test. `BRII_TEST_MODEL` can select another available model ID. Other IDs receive their default reasoning settings, recorded in the report, so consider that when comparing latency.
+
+All conditions receive identical raw text/context, without the current draft or review notes. Order rotates across cases/repeats. No temperature, output-token budget or editor behavior is changed. Errors and incomplete outputs are shown explicitly; an inaccessible model is skipped for the rest of the run, never silently substituted. Edit `public/brii-model-dataset.json` to add cases. The latest long fused sentence is included; its inferred reading is a hypothesis, not ground truth.
+
+Outputs and latency ranges/medians go to the terminal and ignored files `artifacts/cloud-model-benchmark.local.json` and `.local.md`. These do not overwrite the previously tracked benchmark file or affect Git pulls. Review wording, contractions, negation, unusual phrases, and unfinished endings manually. Three repeats help expose inconsistency but still do not establish general accuracy. The runner does not report an automatic semantic score.
+
+`npm run benchmark:models -- --dry-run` lists the cases/conditions/request count without a key or API calls. This workspace has no API key, so live quality and latency for these new comparisons are not measured here. Model/prompt requests, repeat ordering, error handling, and report formatting are verified with explicit provider fixtures.

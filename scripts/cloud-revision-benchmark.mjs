@@ -17,6 +17,6 @@ else{
  }
  report.measured=report.rows.some(row=>typeof row.output==='string'&&row.output.length>0);
 }
-await mkdir('artifacts',{recursive:true});await writeFile('artifacts/cloud-revision-benchmark.json',JSON.stringify(report,null,2));
-console.log(report.note+'\nReport: artifacts/cloud-revision-benchmark.json');
+await mkdir('artifacts',{recursive:true});await writeFile('artifacts/cloud-revision-benchmark.local.json',JSON.stringify(report,null,2));
+console.log(report.note+'\nReport: artifacts/cloud-revision-benchmark.local.json');
 if(apiKey&&report.rows.some(row=>row.error))process.exitCode=1;

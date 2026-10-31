@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "note": "Manual quality review: preserve intended wording and unfinished endings; no automatic semantic score. All variants receive identical raw/context, never the review note.",
+  "cases": [
+    {
+      "id": "have-regression",
+      "raw": "oktestingagain iwonderifitllworkthsitime orillhvatokeeptryingagiangandagina",
+      "context": "",
+      "review": "Preserve the already decoded word have; do not regress to hve. Apostrophes can still need correction."
+    },
+    {
+      "id": "try-again",
+      "raw": "okletstryiagianseefititwroks",
+      "context": "",
+      "review": "Use raw lets to reconsider let trying as let's try; the current draft is evidence, not ground truth."
+    },
+    {
+      "id": "preserve-casual-wording",
+      "raw": "nahitsfine letsjusttryit",
+      "context": "",
+      "review": "Preserve casual wording; no embellishment or unnecessary replacement of correct words."
+    },
+    {
+      "id": "speed-of-thought-long",
+      "raw": "canityepepasfalsthwis ihgihtkwlsnotquietiebutqprtytecloserandiewondoerificanthtinsifasterth",
+      "context": "hello everyone my name is foafraoroq and i love to eat pudding. ",
+      "review": "Likely reading: Can I type as fast as I think? Well, not quite, but pretty close, and I wonder if I can think faster than\u2026 The middle is ambiguous and the ending is incomplete. Review plausible alternatives; do not invent the missing ending."
+    }
+  ]
+}
