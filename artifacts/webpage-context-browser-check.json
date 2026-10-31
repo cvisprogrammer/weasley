@@ -1,0 +1,13 @@
+{
+  "provider": "Real loopback bridge with explicit provider fixture; no live Reddit/Hacker News integration or model quality measured",
+  "hackerNewsUsesPostTargetAndAncestorNotSiblings": true,
+  "commandTimeSnapshotReachesRealBridgeAndUndoLeavesSource": true,
+  "contextToggleOffUsesEditorOnly": true,
+  "hackerNewsSeparateReplyPageSupported": true,
+  "modernRedditUsesDirectCommentAndAncestorChain": true,
+  "oldRedditSupported": true,
+  "articleFallbackExcludesFieldsDraftsHiddenAndNavigation": true,
+  "pageContextBounded": true,
+  "noWholeBodyFallback": true,
+  "gmailKeepsDedicatedAdapter": true
+}

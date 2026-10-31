@@ -3,7 +3,8 @@
 <label>Command trigger <select id="commandTrigger" aria-label="Command trigger"></select></label>
 <p id="triggerHelp"></p><p>Shift+Enter inserts a newline; Escape cancels.</p>
 <p>Commands beside existing text rewrite that whole line; commands on their own line insert. The continuation instruction <code>...</code> only continues.</p>
-<p>Your instruction, target line and nearby editor text are sent to OpenAI. In Gmail, commands also include up to 8,000 characters of the visible email thread or your reply’s quoted original. Expand quoted text first if it is hidden. The API key stays in your local bridge. API usage costs apply. Nothing is automatically sent or booked.</p>
+<p>Your instruction, target line and nearby editor text are sent to OpenAI. When page/thread context is enabled, commands also include up to 8,000 characters from the visible Gmail thread, Reddit/Hacker News post and parent comments, or an article/main page region. This text is sent only when a command runs. Expand quoted text first if it is hidden. The API key stays in your local bridge. API usage costs apply. Nothing is automatically sent or booked.</p>
+<label><input id="includePageContext" type="checkbox"> Include visible page/thread context</label>
 <label><input id="enabled" type="checkbox"> Enable cloud commands</label>
 <button id="allow">Allow this website</button> <button id="try">Try Brii</button>
 <output id="status" role="status">Checking local bridge…</output>

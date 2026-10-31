@@ -1,6 +1,6 @@
 import type {CommandTrigger} from './trigger';
 import type {EditorSurface} from './editor';
-export interface InlineCommand {emailContext?:string;start:number;end:number;instruction:string;mode:'write'|'continue'|'rewrite-line';scope:'command'|'line';lineText:string;before:string;after:string;prefix:string;}
+export interface InlineCommand {pageContext?:string;emailContext?:string;start:number;end:number;instruction:string;mode:'write'|'continue'|'rewrite-line';scope:'command'|'line';lineText:string;before:string;after:string;prefix:string;}
 // A command starts at a line/word boundary; URL protocol slashes are never delimiters.
 export function commandAt(value:string,caret:number,trigger:'close'|'enter',marker:CommandTrigger='//'):InlineCommand|undefined {
  if(caret<0||caret>value.length)return;
@@ -21,7 +21,7 @@ export function commandAt(value:string,caret:number,trigger:'close'|'enter',mark
  return found;
 }
 export interface CommandReply {text:string;model?:string;totalMs?:number;}
-interface Options {trigger?:()=>CommandTrigger;context?:()=>string;active:()=>boolean;ready:()=>boolean;trustedOnly?:boolean;run:(command:InlineCommand,signal:AbortSignal)=>Promise<CommandReply>;status:(message:string)=>void;}
+interface Options {pageContext?:()=>string;trigger?:()=>CommandTrigger;context?:()=>string;active:()=>boolean;ready:()=>boolean;trustedOnly?:boolean;run:(command:InlineCommand,signal:AbortSignal)=>Promise<CommandReply>;status:(message:string)=>void;}
 export class InlineCommands {
  private applying=false;private composing=false;private epoch=0;private pending?:{abort:AbortController;command:InlineCommand;epoch:number;caret:number};
  private listeners:{target:EventTarget;type:string;listener:EventListener;capture:boolean}[]=[];
@@ -56,10 +56,10 @@ export class InlineCommands {
   if(command.lineText.length>1600){this.options.status('Keep a rewrite line under 1600 characters.');return;}
   if(command.instruction.length>600){this.options.status('Keep the instruction under 600 characters.');return;}
   if(!this.editor.canReplace(command.start,command.end)){this.options.status('Command contains unsupported formatting or embedded content.');return;}
-  const emailContext=this.options.context?.();if(emailContext)command={...command,emailContext};
+  const emailContext=this.options.context?.(),pageContext=this.options.pageContext?.();if(emailContext||pageContext)command={...command,...(emailContext?{emailContext}:{}),...(pageContext?{pageContext}:{})};
   let newlineInserted=false;if(newline){this.applying=true;try{newlineInserted=this.editor.insertText('\n',true);}finally{this.applying=false;}}
   const state={abort:new AbortController(),command,epoch:this.epoch,caret:this.editor.selectionStart};this.pending=state;
-  this.options.status((command.scope==='line'?'Rewriting this line… editing it cancels. Other lines stay unchanged. Escape cancels.':'Running command… keep typing. Escape cancels.')+(emailContext?' Using visible Gmail thread ('+emailContext.length+' characters).':'')+(newline&&!newlineInserted?' Enter runs the command here; use Shift+Enter for a newline.':''));
+  this.options.status((command.scope==='line'?'Rewriting this line… editing it cancels. Other lines stay unchanged. Escape cancels.':'Running command… keep typing. Escape cancels.')+(emailContext?' Using visible Gmail thread ('+emailContext.length+' characters).':'')+(pageContext?' Using webpage context ('+pageContext.length+' characters).':'')+(newline&&!newlineInserted?' Enter runs the command here; use Shift+Enter for a newline.':''));
   void this.options.run(command,state.abort.signal).then(async result=>{
    const caret=this.editor.selectionStart,selectionEnd=this.editor.selectionEnd,insideOriginal=command.scope==='line'&&caret===selectionEnd&&caret===state.caret;
    if(state.abort.signal.aborted||state.epoch!==this.epoch||!this.options.active()||this.composing||!this.editor.isFocused()||!this.matches(command)||!insideOriginal&&(caret<command.end||selectionEnd<command.end)){if(this.pending===state)this.options.status('Result discarded after editing, blur or selection change.');return;}
@@ -81,6 +81,6 @@ export class InlineCommands {
 export function commandTransport(send:(message:any)=>Promise<any>){
  return async(command:InlineCommand,signal:AbortSignal):Promise<CommandReply>=>{
   const requestId=crypto.randomUUID();const cancel=()=>void send({kind:'cancel',requestId}).catch(()=>{});signal.addEventListener('abort',cancel,{once:true});
-  try{const response=await send({kind:'command',requestId,instruction:command.instruction,mode:command.mode,lineText:command.lineText,before:command.before,after:command.after,...(command.emailContext?{emailContext:command.emailContext}:{})});if(response.error)throw Error(response.error==='Not found'?'Restart the updated bridge to enable inline commands.':response.error);if(response.commandStrategy!=='inline-commands-v3')throw Error('Restart the updated Brii bridge for inline commands.');return response;}finally{signal.removeEventListener('abort',cancel);}
+  try{const response=await send({kind:'command',requestId,instruction:command.instruction,mode:command.mode,lineText:command.lineText,before:command.before,after:command.after,...(command.emailContext?{emailContext:command.emailContext}:{}),...(command.pageContext?{pageContext:command.pageContext}:{})});if(response.error)throw Error(response.error==='Not found'?'Restart the updated bridge to enable inline commands.':response.error);if(response.commandStrategy!=='inline-commands-v4')throw Error('Restart the updated Brii bridge for inline commands.');return response;}finally{signal.removeEventListener('abort',cancel);}
  };
 }

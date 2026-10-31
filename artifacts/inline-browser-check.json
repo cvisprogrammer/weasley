@@ -23,5 +23,6 @@
   "standaloneMarkerPersists": true,
   "liveSettingsSwitchDisablesOldMarker": true,
   "markerChangeCancelsPendingCommand": true,
-  "popupSelectPersistsWithoutChangingConsent": true
+  "popupSelectPersistsWithoutChangingConsent": true,
+  "popupContextTogglePersists": true
 }

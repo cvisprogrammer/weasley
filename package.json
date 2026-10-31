@@ -1,6 +1,6 @@
 {
   "name": "weasley",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "private": true,
   "type": "module",
   "scripts": {
@@ -20,7 +20,8 @@
     "test:rich-browser": "node scripts/rich-browser-check.mjs",
     "test:inline-browser": "node scripts/inline-browser-check.mjs",
     "test:lexical-browser": "node scripts/lexical-browser-check.mjs",
-    "test:gmail-context-browser": "node scripts/gmail-context-browser-check.mjs"
+    "test:gmail-context-browser": "node scripts/gmail-context-browser-check.mjs",
+    "test:webpage-context-browser": "node scripts/webpage-context-browser-check.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "0.2.86",
